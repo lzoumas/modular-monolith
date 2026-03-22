@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      - TZ
+      - POSTGRES_USER=admin 
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=modular_monolith
+    volumes:
+      - ./docker_data/pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - docker-web
+
+networks:
+  docker-web:
+    driver: bridge

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Bogus" Version="35.6.2" />
+        <PackageReference Include="Carter" Version="8.2.1" />
+        <PackageReference Include="ErrorOr" Version="2.0.1" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+        <PackageReference Include="MediatR" Version="12.4.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Carriers\Modules.Carriers.PublicApi\Modules.Carriers.PublicApi.csproj" />
+        <ProjectReference Include="..\..\Common\Modules.Common.Features\Modules.Common.Features.csproj" />
+        <ProjectReference Include="..\..\Stocks\Modules.Stocks.PublicApi\Modules.Stocks.PublicApi.csproj" />
+        <ProjectReference Include="..\Modules.Shipments.Domain\Modules.Shipments.Domain.csproj" />
+        <ProjectReference Include="..\Modules.Shipments.Infrastructure\Modules.Shipments.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\" />
+    </ItemGroup>
+
+</Project>
