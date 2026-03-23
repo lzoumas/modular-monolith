@@ -2,7 +2,7 @@
 name: Feature Request
 about: Publish Profile workflow -- endpoint, Service Bus message, Azure Function
 title: '[Feature] Publish Profile workflow'
-labels: enhancement, phase-1, profiles, publish-workflow
+labels: enhancement, publish-workflow
 assignees: ''
 ---
 
@@ -12,13 +12,13 @@ Implement the full publish workflow: a FastEndpoints endpoint that sends a Servi
 
 ## Prerequisites
 
-- P1-04 (Service Layer) -- `IProfileService.PublishAsync()` must be implemented
-- P1-03 (PublicApi) -- `IProfileModuleApi` and `PublishProfileMessage` must exist
-- P0-03 (Functions) -- Functions project must be set up
+- profiles-module/04-profiles-service-layer -- `IProfileService.PublishAsync()` must be implemented
+- profiles-module/03-profiles-public-api -- `IProfileModuleApi` and `PublishProfileMessage` must exist
+- publish-workflow/01-functions-project -- Functions project must be set up
 
 ## Background / Context
 
-The publish workflow is the most architecturally significant feature. It demonstrates the split between the API Host (HTTP) and Azure Functions (async processing), both sharing the same module code. The endpoint is a thin sender; the Function is the orchestrator. See [06-background-and-event-driven.md](../planning/06-background-and-event-driven.md) for full details.
+The publish workflow is the most architecturally significant feature. It demonstrates the split between the API Host (HTTP) and Azure Functions (async processing), both sharing the same module code. The endpoint is a thin sender; the Function is the orchestrator. See [06-background-and-event-driven.md](../../planning/06-background-and-event-driven.md) for full details.
 
 **Flow:**
 ```
@@ -75,7 +75,6 @@ Service Bus "profile-publish" queue
 - [ ] Add `ExternalCatalogApi:BaseUrl` to Functions app settings
 
 ### Sub-task 4: Functions DI Wiring
-- [ ] Add project reference to `Exhibitor.Profiles.PublicApi` in Functions `.csproj`
 - [ ] Verify `AddProfilesModule()` registers `IProfileModuleApi` (so the Function can resolve it)
 - [ ] Configure Service Bus connection in Functions `local.settings.json`:
   - `ServiceBusConnection` connection string
@@ -98,8 +97,8 @@ Service Bus "profile-publish" queue
 | `Profiles/Exhibitor.Profiles.Features/Features/PublishProfile/PublishProfileEndpoint.cs` | Add |
 | `ExhibitorPlatform.Functions/Functions/Profiles/PublishProfileFunction.cs` | Add |
 | `ExhibitorPlatform.Functions/Models/ExternalProfilePayload.cs` | Add |
-| `ExhibitorPlatform.Host/Program.cs` | Update (Service Bus DI) |
-| `ExhibitorPlatform.Host/appsettings.json` | Update (Service Bus config) |
+| `ExhibitorPlatform.WebApi/Program.cs` | Update (Service Bus DI) |
+| `ExhibitorPlatform.WebApi/appsettings.json` | Update (Service Bus config) |
 | `ExhibitorPlatform.Functions/Program.cs` | Update (HttpClientFactory, module DI) |
 | `ExhibitorPlatform.Functions/local.settings.json` | Update (Service Bus connection) |
 | `ExhibitorPlatform.Functions/ExhibitorPlatform.Functions.csproj` | Update (project refs, NuGets) |
@@ -107,7 +106,7 @@ Service Bus "profile-publish" queue
 ## Out of Scope
 
 - Dead-letter queue monitoring/alerting
-- Service Bus topic/subscription (using a simple queue for Phase 1)
+- Service Bus topic/subscription (using a simple queue for now)
 - Retry policy customization beyond Service Bus defaults
 
 ## Technical Notes
@@ -115,7 +114,7 @@ Service Bus "profile-publish" queue
 - **Separation of concerns:** The module does the business logic (draft -> published). The Function does the integration work (transform, send to external). The module never knows about external systems.
 - **ServiceBusSender injection:** Register in DI using `ServiceBusClient.CreateSender("profile-publish")`. The sender is thread-safe and should be a singleton.
 - **ExternalCatalogApi:** The external system URL comes from config. Use `IHttpClientFactory` named client pattern. The actual external system API contract should be confirmed -- the `ExternalProfilePayload` model in the planning doc is illustrative.
-- **For Phase 1, keep orchestration logic in the Function.** Extract to a `ProfilePublishOrchestrator` service only if it gets complex (see 06-background-and-event-driven.md).
+- **Keep orchestration logic in the Function for now.** Extract to a `ProfilePublishOrchestrator` service only if it gets complex (see 06-background-and-event-driven.md).
 
 ## Verification Steps
 

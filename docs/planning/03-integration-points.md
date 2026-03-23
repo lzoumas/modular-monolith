@@ -31,7 +31,7 @@ The implementation (`ProfileModuleApi`) lives in `Exhibitor.Profiles.Features/Se
 ## Dependency Rules
 
 ```
-ExhibitorPlatform.Host
+ExhibitorPlatform.WebApi
   |-- Exhibitor.Profiles.Features
   |-- Exhibitor.Profiles.Infrastructure
   |-- Exhibitor.Common.*

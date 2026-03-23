@@ -1,4 +1,4 @@
-﻿# Build Plan
+# Build Plan
 
 Phased build plan for the exhibitor platform modular monolith. This is greenfield -- the existing profile service has not gone past the dev environment, so there are no production migrations or cutovers.
 
@@ -9,7 +9,7 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 **Goal:** Empty but runnable ASP.NET Core host with shared infrastructure wired up.
 
 - [ ] Remove the existing reference monolith demo code (Shipments, Carriers, Stocks modules)
-- [ ] Create `ExhibitorPlatform.Host` ASP.NET Core Web API project
+- [ ] Create `ExhibitorPlatform.WebApi` ASP.NET Core Web API project
 - [ ] Add FastEndpoints NuGet package
 - [ ] Set up `Program.cs` with FastEndpoints, Scalar (OpenAPI), health checks, exception handling middleware
 - [ ] Create `ExhibitorPlatform.Functions` Azure Functions (Isolated Worker) project

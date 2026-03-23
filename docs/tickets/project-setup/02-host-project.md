@@ -1,14 +1,14 @@
 ---
 name: Technical Task
 about: Create the ASP.NET Core Web API host project
-title: '[Tech] Create ExhibitorPlatform.Host project'
-labels: technical, phase-0
+title: '[Tech] Create ExhibitorPlatform.WebApi project'
+labels: technical, project-setup
 assignees: ''
 ---
 
 ## Summary
 
-Create the `ExhibitorPlatform.Host` ASP.NET Core Web API project -- the single entry point for all HTTP traffic. Rename/replace the existing `ModularMonolith.Host` project.
+Create the `ExhibitorPlatform.WebApi` ASP.NET Core Web API project -- the single entry point for all HTTP traffic. Rename/replace the existing `ModularMonolith.Host` project.
 
 ## Background / Context
 
@@ -17,7 +17,7 @@ The modular monolith needs a single ASP.NET Core host that registers all module 
 ## Scope
 
 ### In Scope
-- Create (or rename) `ExhibitorPlatform.Host` project targeting .NET 9
+- Create (or rename) `ExhibitorPlatform.WebApi` project targeting .NET 9
 - Add NuGet packages: FastEndpoints, FastEndpoints.Swagger (Scalar), health checks
 - Set up `Program.cs` with FastEndpoints, Scalar, exception handling, health checks
 - Create `appsettings.json` and `appsettings.Development.json` with placeholder config
@@ -25,24 +25,25 @@ The modular monolith needs a single ASP.NET Core host that registers all module 
 - Update solution file
 
 ### Out of Scope
-- Authentication/authorization (tracked as open question)
-- Actual module registration (depends on P1-04)
-- Cosmos DB wiring (depends on P0-04)
+- Actual module registration (depends on profiles-module/04-profiles-service-layer)
+- Cosmos DB wiring (depends on project-setup/04-local-dev-setup)
 
 ## Implementation Tasks
 
-- [ ] Rename `ModularMonolith.Host` to `ExhibitorPlatform.Host` (or create new and delete old)
-- [ ] Update `ExhibitorPlatform.Host.csproj` -- target `net9.0`, add NuGet packages:
+- [ ] Rename `ModularMonolith.Host` to `ExhibitorPlatform.WebApi` (or create new and delete old)
+- [ ] Update `ExhibitorPlatform.WebApi.csproj` -- target `net9.0`, add NuGet packages:
   - `FastEndpoints`
   - `FastEndpoints.Swagger` (includes Scalar UI)
   - `Microsoft.Extensions.Diagnostics.HealthChecks`
   - `Ardalis.Result` (for shared result pattern)
   - `Serilog.AspNetCore` (logging)
+  - `Platform.Shared.ManagedIdentity` (authentication via Azure AD / Entra ID)
 - [ ] Create `Program.cs`:
   - `builder.Services.AddFastEndpoints()`
   - `builder.Services.SwaggerDocument(...)` for Scalar
   - Health check endpoint at `/health`
   - Exception handling middleware
+  - Configure `Platform.Shared.ManagedIdentity` authentication middleware
   - Comment placeholders for `AddProfilesModule()` and `AddCosmosDbClient()`
   - `app.UseFastEndpoints()` and `app.UseSwaggerGen()`
 - [ ] Create `appsettings.json` with sections for:
@@ -56,19 +57,20 @@ The modular monolith needs a single ASP.NET Core host that registers all module 
 ## Acceptance Criteria
 
 - [ ] `dotnet build` succeeds
-- [ ] `dotnet run --project ExhibitorPlatform.Host` starts the application
+- [ ] `dotnet run --project ExhibitorPlatform.WebApi` starts the application
 - [ ] Scalar UI available at `/swagger` in development
 - [ ] Health check endpoint at `/health` returns healthy
 - [ ] Solution file updated with correct project name
+- [ ] Unauthenticated requests to API endpoints return 401
 
 ## Files to Modify
 
 | File | Change Type |
 |------|-------------|
-| `ExhibitorPlatform.Host/ExhibitorPlatform.Host.csproj` | Add |
-| `ExhibitorPlatform.Host/Program.cs` | Add |
-| `ExhibitorPlatform.Host/appsettings.json` | Add |
-| `ExhibitorPlatform.Host/appsettings.Development.json` | Add |
+| `ExhibitorPlatform.WebApi/ExhibitorPlatform.WebApi.csproj` | Add |
+| `ExhibitorPlatform.WebApi/Program.cs` | Add |
+| `ExhibitorPlatform.WebApi/appsettings.json` | Add |
+| `ExhibitorPlatform.WebApi/appsettings.Development.json` | Add |
 | `ExhibitorPlatform.sln` | Update |
 | `.github/copilot-instructions.md` | Update |
 
@@ -76,6 +78,7 @@ The modular monolith needs a single ASP.NET Core host that registers all module 
 
 - FastEndpoints auto-discovers endpoint classes from referenced assemblies. Module Feature projects must be referenced for endpoints to register.
 - Scalar replaces Swashbuckle/Swagger UI -- different configuration pattern.
+- `Platform.Shared.ManagedIdentity` handles Azure AD / Entra ID token validation. Check the existing microservices for the exact configuration pattern (audience, tenant, etc.).
 
 ## Verification Steps
 

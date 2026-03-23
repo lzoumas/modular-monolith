@@ -2,7 +2,7 @@
 name: Technical Task
 about: Create the Profiles Service Layer and DI registration
 title: '[Tech] Create Profiles Service Layer and DI registration'
-labels: technical, phase-1, profiles
+labels: technical, profiles-module
 assignees: ''
 ---
 
@@ -12,7 +12,7 @@ Create `Exhibitor.Profiles.Features` project with the service layer (`IProfileSe
 
 ## Background / Context
 
-The service layer replaces the CQRS command/query handlers from the existing microservice. `ProfileService` contains all business logic (CRUD, publish, discard draft). `ProfileModuleApi` implements `IProfileModuleApi` (from PublicApi) and delegates to `IProfileService` with domain-to-contract mapping. See [02-module-mapping.md](../planning/02-module-mapping.md).
+The service layer replaces the CQRS command/query handlers from the existing microservice. `ProfileService` contains all business logic (CRUD, publish, discard draft). `ProfileModuleApi` implements `IProfileModuleApi` (from PublicApi) and delegates to `IProfileService` with domain-to-contract mapping. See [02-module-mapping.md](../../planning/02-module-mapping.md).
 
 **Source:** [experience.exhibitor.profile.service](https://github.com/innovationsandmore/experience.exhibitor.profile.service) `develop` branch -- `Application/Services/` folder.
 
@@ -26,14 +26,14 @@ The service layer replaces the CQRS command/query handlers from the existing mic
 - Create empty `Features/` folder structure for endpoint tickets
 
 ### Out of Scope
-- FastEndpoints endpoint classes (P1-05 through P1-07)
+- FastEndpoints endpoint classes (see 05-profile-crud-endpoints and publish-workflow/)
 - Validators (created with their respective endpoint tickets)
 
 ## Prerequisites
 
-- P1-01 (Domain) -- for entity types
-- P1-02 (Infrastructure) -- for `IProfileRepository`
-- P1-03 (PublicApi) -- for `IProfileModuleApi` interface
+- profiles-module/01-profiles-domain -- for entity types
+- profiles-module/02-profiles-infrastructure -- for `IProfileRepository`
+- profiles-module/03-profiles-public-api -- for `IProfileModuleApi` interface
 
 ## Implementation Tasks
 
@@ -84,12 +84,11 @@ The service layer replaces the CQRS command/query handlers from the existing mic
   - `Features/DiscardDraft/`
 
 ### Host Wiring
-- [ ] Update `ExhibitorPlatform.Host/Program.cs`:
+- [ ] Update `ExhibitorPlatform.WebApi/Program.cs`:
   - Add project reference to `Exhibitor.Profiles.Features`
   - Add project reference to `Exhibitor.Profiles.Infrastructure`
   - Call `builder.Services.AddProfilesModule()`
   - Call `builder.Services.AddProfilesInfrastructure()`
-- [ ] Update `ExhibitorPlatform.Functions/Program.cs` with same registrations
 
 ## Acceptance Criteria
 
@@ -98,7 +97,7 @@ The service layer replaces the CQRS command/query handlers from the existing mic
 - [ ] `ProfileService` compiles with business logic ported from source
 - [ ] `ProfileModuleApi` correctly maps domain types to PublicApi contracts
 - [ ] `AddProfilesModule()` registers all services
-- [ ] Host and Functions both call `AddProfilesModule()` and `AddProfilesInfrastructure()` in `Program.cs`
+- [ ] WebApi calls `AddProfilesModule()` and `AddProfilesInfrastructure()` in `Program.cs`
 
 ## Files to Modify
 
@@ -109,10 +108,8 @@ The service layer replaces the CQRS command/query handlers from the existing mic
 | `Profiles/Exhibitor.Profiles.Features/Services/ProfileService.cs` | Add |
 | `Profiles/Exhibitor.Profiles.Features/Services/ProfileModuleApi.cs` | Add |
 | `Profiles/Exhibitor.Profiles.Features/DependencyInjection.cs` | Add |
-| `ExhibitorPlatform.Host/Program.cs` | Update |
-| `ExhibitorPlatform.Host/ExhibitorPlatform.Host.csproj` | Update (add project refs) |
-| `ExhibitorPlatform.Functions/Program.cs` | Update |
-| `ExhibitorPlatform.Functions/ExhibitorPlatform.Functions.csproj` | Update (add project refs) |
+| `ExhibitorPlatform.WebApi/Program.cs` | Update |
+| `ExhibitorPlatform.WebApi/ExhibitorPlatform.WebApi.csproj` | Update (add project refs) |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations
@@ -124,5 +121,4 @@ The service layer replaces the CQRS command/query handlers from the existing mic
 ## Verification Steps
 
 1. Run `dotnet build` -- entire solution compiles
-2. Start the Host -- DI container resolves all services without errors
-3. Start the Functions project -- same DI resolution works
+2. Start the WebApi -- DI container resolves all services without errors

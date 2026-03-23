@@ -1,4 +1,4 @@
-﻿# Consolidation Overview
+# Consolidation Overview
 
 ## Goal
 
@@ -44,7 +44,7 @@ Phase 1 builds the full architecture with the **Profiles module** -- API endpoin
 
 ```
 Solution 'ExhibitorPlatform'
-├── ExhibitorPlatform.Host                     # ASP.NET Core Web API
+├── ExhibitorPlatform.WebApi                     # ASP.NET Core Web API
 ├── ExhibitorPlatform.Functions                # Azure Functions (Isolated Worker)
 ├── Modules (solution folder)
 │   ├── Profiles (solution folder)
@@ -72,9 +72,9 @@ Solution 'ExhibitorPlatform'
 ```
 repo-root/
 │
-├── ExhibitorPlatform.Host/
+├── ExhibitorPlatform.WebApi/
 │   ├── Program.cs                                 # DI wiring, middleware, Cosmos, health checks
-│   ├── ExhibitorPlatform.Host.csproj
+│   ├── ExhibitorPlatform.WebApi.csproj
 │   ├── appsettings.json
 │   ├── appsettings.Development.json
 │   └── appsettings.{env}.json                     # dev, qa, uat, prod
@@ -199,7 +199,7 @@ repo-root/
 ### Project References
 
 ```
-ExhibitorPlatform.Host
+ExhibitorPlatform.WebApi
   ├── Exhibitor.Profiles.Features
   ├── Exhibitor.Profiles.Infrastructure
   └── Exhibitor.Common.*

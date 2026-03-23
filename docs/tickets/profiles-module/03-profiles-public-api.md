@@ -2,7 +2,7 @@
 name: Technical Task
 about: Create the Profiles PublicApi Layer
 title: '[Tech] Create Profiles PublicApi Layer'
-labels: technical, phase-1, profiles
+labels: technical, profiles-module
 assignees: ''
 ---
 
@@ -12,7 +12,7 @@ Create `Exhibitor.Profiles.PublicApi` project with the `IProfileModuleApi` inter
 
 ## Background / Context
 
-The PublicApi project defines the cross-boundary contract for the Profiles module. The Azure Functions project uses `IProfileModuleApi` to call publish logic. Future modules (e.g. Brands) will use it for cross-module queries. The project has no project references -- only the `Ardalis.Result` NuGet package. See [03-integration-points.md](../planning/03-integration-points.md).
+The PublicApi project defines the cross-boundary contract for the Profiles module. The Azure Functions project uses `IProfileModuleApi` to call publish logic. Future modules (e.g. Brands) will use it for cross-module queries. The project has no project references -- only the `Ardalis.Result` NuGet package. See [03-integration-points.md](../../planning/03-integration-points.md).
 
 ## Scope
 
@@ -23,8 +23,8 @@ The PublicApi project defines the cross-boundary contract for the Profiles modul
 - No project references (only `Ardalis.Result` NuGet)
 
 ### Out of Scope
-- Implementation of `IProfileModuleApi` (that is `ProfileModuleApi` in P1-04)
-- Azure Function that consumes the message (P1-06)
+- Implementation of `IProfileModuleApi` (see 04-profiles-service-layer)
+- Azure Function that consumes the message (see publish-workflow/)
 
 ## Implementation Tasks
 

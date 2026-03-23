@@ -2,7 +2,7 @@
 name: Technical Task
 about: Profile unit test coverage
 title: '[Tech] Profile unit tests'
-labels: technical, phase-1, profiles, testing
+labels: technical, profiles-module, testing
 assignees: ''
 ---
 
@@ -23,7 +23,7 @@ Unit tests validate business logic in isolation without Cosmos DB or Service Bus
 - `ProfileModuleApi` unit tests (mock `IProfileService`)
 
 ### Out of Scope
-- Integration tests with Cosmos DB (P1-09)
+- Integration tests with Cosmos DB (see 07-integration-tests)
 - Endpoint tests (covered by integration tests)
 - Azure Function tests
 

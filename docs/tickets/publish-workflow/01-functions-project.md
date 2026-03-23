@@ -2,7 +2,7 @@
 name: Technical Task
 about: Create the Azure Functions project for background processing
 title: '[Tech] Create ExhibitorPlatform.Functions project'
-labels: technical, phase-0
+labels: technical, publish-workflow
 assignees: ''
 ---
 
@@ -12,7 +12,7 @@ Create the `ExhibitorPlatform.Functions` Azure Functions (Isolated Worker) proje
 
 ## Background / Context
 
-The publish workflow is async: the API host drops a message on a Service Bus queue, and an Azure Function picks it up, calls the module's PublicApi, and sends data to an external system. The Functions project shares the same module code as the Host via project references -- no HTTP hop between them. See [06-background-and-event-driven.md](../planning/06-background-and-event-driven.md).
+The publish workflow is async: the API host drops a message on a Service Bus queue, and an Azure Function picks it up, calls the module's PublicApi, and sends data to an external system. The Functions project shares the same module code as the Host via project references -- no HTTP hop between them. See [06-background-and-event-driven.md](../../planning/06-background-and-event-driven.md).
 
 ## Scope
 
@@ -24,7 +24,7 @@ The publish workflow is async: the API host drops a message on a Service Bus que
 - Create folder structure for function classes (`Functions/Profiles/`)
 
 ### Out of Scope
-- Actual function implementations (P1-06)
+- Actual function implementations (see 02-publish-profile-workflow)
 - Service Bus queue/topic creation (infrastructure concern)
 
 ## Implementation Tasks
@@ -41,7 +41,7 @@ The publish workflow is async: the API host drops a message on a Service Bus que
 - [ ] Create `Program.cs`:
   - Configure Isolated Worker host
   - Register Serilog
-  - Add comment placeholders for `AddProfilesModule()`, `AddProfilesInfrastructure()`
+  - Call `AddProfilesModule()`, `AddProfilesInfrastructure()`
   - Register `IHttpClientFactory` with named client for external system
 - [ ] Create `host.json` with:
   - Service Bus extension config (max concurrent calls, retry policy)
@@ -51,14 +51,19 @@ The publish workflow is async: the API host drops a message on a Service Bus que
   - `ServiceBusConnection` (placeholder)
   - `FUNCTIONS_WORKER_RUNTIME: dotnet-isolated`
 - [ ] Create empty folder structure: `Functions/Profiles/`
-- [ ] Add project to solution file under appropriate solution folder
+- [ ] Add project references:
+  - `Exhibitor.Profiles.Features` (for DI registration)
+  - `Exhibitor.Profiles.Infrastructure` (for DI registration)
+  - `Exhibitor.Profiles.PublicApi` (for `IProfileModuleApi` used in Functions)
+  - `Exhibitor.Common.*`
+- [ ] Add project to solution file
 
 ## Acceptance Criteria
 
 - [ ] `dotnet build` succeeds for the Functions project
 - [ ] Functions project starts locally (even with no functions registered)
 - [ ] `Program.cs` follows the same DI pattern as the Host
-- [ ] Project references are set up for future module registration
+- [ ] Project references are set up for module resolution
 
 ## Files to Modify
 

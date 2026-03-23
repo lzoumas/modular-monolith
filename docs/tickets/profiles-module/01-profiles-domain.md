@@ -2,7 +2,7 @@
 name: Technical Task
 about: Create the Profiles Domain Layer
 title: '[Tech] Create Profiles Domain Layer'
-labels: technical, phase-1, profiles
+labels: technical, profiles-module
 assignees: ''
 ---
 
@@ -12,7 +12,7 @@ Create `Exhibitor.Profiles.Domain` project and port domain entities, value objec
 
 ## Background / Context
 
-The domain layer contains the core business objects with no framework dependencies. `Profile` inherits from `PublishableEntity<ProfileContent>` (from Common), which provides the draft/publish pattern. Value objects are extracted for complex nested data. See [02-module-mapping.md](../planning/02-module-mapping.md).
+The domain layer contains the core business objects with no framework dependencies. `Profile` inherits from `PublishableEntity<ProfileContent>` (from Common), which provides the draft/publish pattern. Value objects are extracted for complex nested data. See [02-module-mapping.md](../../planning/02-module-mapping.md).
 
 **Source:** [experience.exhibitor.profile.service](https://github.com/innovationsandmore/experience.exhibitor.profile.service) `develop` branch -- `Application/Models/` folder.
 
@@ -25,9 +25,9 @@ The domain layer contains the core business objects with no framework dependenci
 - Port any profile-specific enums
 
 ### Out of Scope
-- Repository interfaces (P1-02)
-- Service classes (P1-04)
-- Cosmos DB document models (P1-02)
+- Repository interfaces (see 02-profiles-infrastructure)
+- Service classes (see 04-profiles-service-layer)
+- Cosmos DB document models (see 02-profiles-infrastructure)
 
 ## Implementation Tasks
 

@@ -24,7 +24,7 @@ With FastEndpoints, HTTP endpoints handle their own request/response flow. Share
 ### 4. Background / Event-Driven - Azure Functions (Isolated Worker)
 **Status:** DECIDED
 
-A separate `ExhibitorPlatform.Functions` project handles Service Bus triggers. It references the same module projects as the Host (no HTTP hop). Azure Functions provides automatic retry, dead-lettering, and independent scaling. See [06-background-and-event-driven](06-background-and-event-driven.md).
+A separate `ExhibitorPlatform.Functions` project handles Service Bus triggers. It references the same module projects as the Web API (no HTTP hop).
 
 ### 5. Cosmos DB - New database, no migration needed
 **Status:** DECIDED
@@ -41,14 +41,14 @@ FastEndpoints has built-in support for Scalar (modern OpenAPI UI). No need for S
 
 Remove Shipments, Carriers, Stocks demo modules. They've served their purpose as a pattern reference. The planning docs capture the patterns.
 
+### 8. Authentication / Authorization - Platform.Shared.ManagedIdentity
+**Status:** DECIDED
+
+Use `Platform.Shared.ManagedIdentity` for authentication. The existing microservices already use `ManagedIdentityApiClient` from `platform.shared` for service-to-service auth via Azure AD / Entra ID. The Web API will use the same package to validate bearer tokens and authenticate outbound calls. This keeps auth consistent across the platform with zero custom implementation.
+
 ---
 
 ## Open -- Needs Investigation
-
-### 8. Authentication / Authorization
-**Status:** TODO
-
-Current Function Apps likely use Function Keys or Azure AD / Entra ID. The Web API will need bearer token auth. Investigate what the current services use and replicate.
 
 ### 9. Hosting: App Service vs Container App
 **Status:** TODO

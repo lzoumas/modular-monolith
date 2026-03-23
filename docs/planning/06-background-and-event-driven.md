@@ -10,7 +10,7 @@ Two deployable projects share the same module code. The API Host handles HTTP re
 
 ```
                  +----------------------------+
-  HTTP --------> |   ExhibitorPlatform.Host   |--+
+  HTTP --------> |   ExhibitorPlatform.WebApi   |--+
                  +----------------------------+  |
                                                  |  project reference
                                                  v

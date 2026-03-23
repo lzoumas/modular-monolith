@@ -2,7 +2,7 @@
 name: Feature Request
 about: Discard Draft endpoint
 title: '[Feature] Discard Draft endpoint'
-labels: enhancement, phase-1, profiles
+labels: enhancement, publish-workflow
 assignees: ''
 ---
 
@@ -12,11 +12,11 @@ Create the Discard Draft FastEndpoints endpoint. Unlike publish (which is async 
 
 ## Prerequisites
 
-- P1-04 (Service Layer) -- `IProfileService.DiscardDraftAsync()` must be implemented
+- profiles-module/04-profiles-service-layer -- `IProfileService.DiscardDraftAsync()` must be implemented
 
 ## Background / Context
 
-Discarding a draft reverts the profile's draft content to the last published state. This is a simple, synchronous operation -- no Service Bus, no external system calls. The endpoint calls the service directly. See [02-module-mapping.md](../planning/02-module-mapping.md).
+Discarding a draft reverts the profile's draft content to the last published state. This is a simple, synchronous operation -- no Service Bus, no external system calls. The endpoint calls the service directly. It is part of the publish lifecycle -- you draft, publish, or discard. See [02-module-mapping.md](../../planning/02-module-mapping.md).
 
 ## Requirements
 
@@ -50,7 +50,7 @@ Discarding a draft reverts the profile's draft content to the last published sta
 
 ## Out of Scope
 
-- Publish workflow (P1-06)
+- Publish workflow (see 02-publish-profile-workflow)
 - Any Service Bus interaction (discard is fully synchronous)
 
 ## Technical Notes

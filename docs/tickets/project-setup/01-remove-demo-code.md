@@ -2,7 +2,7 @@
 name: Technical Task
 about: Remove the reference monolith demo code
 title: '[Tech] Remove reference monolith demo code'
-labels: technical, phase-0
+labels: technical, project-setup
 assignees: ''
 ---
 
@@ -27,7 +27,7 @@ The current repo contains a reference implementation with three demo modules (Sh
 - Remove or update the existing `docker-compose.yml` (PostgreSQL -> will be replaced by Cosmos emulator later)
 
 ### Out of Scope
-- Creating the new project structure (that is P0-02 through P0-04)
+- Creating the new project structure (covered by the remaining project-setup tickets)
 - Removing planning docs or copilot instructions
 
 ## Implementation Tasks
@@ -63,7 +63,7 @@ The current repo contains a reference implementation with three demo modules (Sh
 
 ## Risks / Considerations
 
-- The `.github/copilot-instructions.md` still references the demo structure. It will be updated in a separate ticket (or as part of P0-02) once the new structure is in place.
+- The `.github/copilot-instructions.md` still references the demo structure. It will be updated as part of the Host project ticket once the new structure is in place.
 
 ## Verification Steps
 

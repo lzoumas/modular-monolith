@@ -2,7 +2,7 @@
 name: Technical Task
 about: Create Common shared library projects
 title: '[Tech] Create Common shared libraries'
-labels: technical, phase-0
+labels: technical, project-setup
 assignees: ''
 ---
 

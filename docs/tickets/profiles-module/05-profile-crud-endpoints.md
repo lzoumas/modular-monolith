@@ -2,7 +2,7 @@
 name: Feature Request
 about: Profile CRUD endpoints using FastEndpoints
 title: '[Feature] Profile CRUD endpoints'
-labels: enhancement, phase-1, profiles
+labels: enhancement, profiles-module
 assignees: ''
 ---
 
@@ -12,12 +12,12 @@ Create the five CRUD FastEndpoints for the Profiles module: Create, Get, Update,
 
 ## Prerequisites
 
-- P1-04 (Service Layer) -- `IProfileService` must be registered
-- P0-02 (Host) -- FastEndpoints must be configured
+- profiles-module/04-profiles-service-layer -- `IProfileService` must be registered
+- project-setup/02-host-project -- FastEndpoints must be configured
 
 ## Background / Context
 
-These endpoints replace the Azure Function HTTP triggers from the existing profile service. FastEndpoints provides one-class-per-endpoint with built-in FluentValidation and Swagger support. Endpoints inject `IProfileService` directly (they are inside the module boundary). See [02-module-mapping.md](../planning/02-module-mapping.md) for the endpoint pattern.
+These endpoints replace the Azure Function HTTP triggers from the existing profile service. FastEndpoints provides one-class-per-endpoint with built-in FluentValidation and Swagger support. Endpoints inject `IProfileService` directly (they are inside the module boundary). See [02-module-mapping.md](../../planning/02-module-mapping.md) for the endpoint pattern.
 
 ## Requirements
 
@@ -98,9 +98,9 @@ These endpoints replace the Azure Function HTTP triggers from the existing profi
 
 ## Out of Scope
 
-- Publish endpoint (P1-06)
-- Discard draft endpoint (P1-07)
-- Authentication/authorization (open question -- tracked in 07-open-questions.md)
+- Publish endpoint (see publish-workflow/02-publish-profile-workflow)
+- Discard draft endpoint (see publish-workflow/03-discard-draft-endpoint)
+- Authentication/authorization (handled by `Platform.Shared.ManagedIdentity` middleware -- configured in project-setup/02-host-project)
 
 ## Technical Notes
 

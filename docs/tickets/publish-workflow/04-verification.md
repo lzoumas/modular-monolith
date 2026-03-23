@@ -1,18 +1,18 @@
 ---
 name: Technical Task
-about: End-to-end verification of the Profiles module
+about: End-to-end verification of all Profiles functionality
 title: '[Tech] End-to-end verification'
-labels: technical, phase-1, profiles
+labels: technical, publish-workflow
 assignees: ''
 ---
 
 ## Summary
 
-Verify the complete Profiles module works end-to-end: all CRUD endpoints, the publish workflow (endpoint -> Service Bus -> Function -> Cosmos -> external system), discard draft, and all tests passing.
+Verify the complete Profiles module works end-to-end: all CRUD endpoints, the publish workflow (endpoint -> Service Bus -> Function -> Cosmos -> external system), discard draft, and all tests passing. This is the final checkpoint before moving to Phase 2 (Brands).
 
 ## Background / Context
 
-This is the final checkpoint for Phase 1. All individual stories should be complete. This ticket is about running the full system together and verifying everything integrates correctly. It is also the place to catch any issues that slipped through individual story testing.
+All individual stories across project-setup, profiles-module, and publish-workflow should be complete. This ticket is about running the full system together and verifying everything integrates correctly. It is also the place to catch any issues that slipped through individual story testing.
 
 ## Scope
 
@@ -25,7 +25,7 @@ This is the final checkpoint for Phase 1. All individual stories should be compl
 - Review Scalar/OpenAPI documentation for completeness
 
 ### Out of Scope
-- CI/CD pipeline (Phase 4)
+- CI/CD pipeline
 - Performance testing
 - Authentication/authorization (open question)
 

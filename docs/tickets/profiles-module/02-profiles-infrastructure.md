@@ -2,7 +2,7 @@
 name: Technical Task
 about: Create the Profiles Infrastructure Layer
 title: '[Tech] Create Profiles Infrastructure Layer'
-labels: technical, phase-1, profiles
+labels: technical, profiles-module
 assignees: ''
 ---
 
@@ -12,7 +12,7 @@ Create `Exhibitor.Profiles.Infrastructure` project with the Cosmos DB repository
 
 ## Background / Context
 
-The infrastructure layer owns the Cosmos DB data access for the Profiles module. `ProfileRepository` extends `CosmosRepositoryBase` (from Common) and works against the `profiles` container (partition key: `/exhibitorId`). The Cosmos document model (`ProfileDocument`) maps to/from the domain entity. See [02-module-mapping.md](../planning/02-module-mapping.md) and [04-data-migration.md](../planning/04-data-migration.md).
+The infrastructure layer owns the Cosmos DB data access for the Profiles module. `ProfileRepository` extends `CosmosRepositoryBase` (from Common) and works against the `profiles` container (partition key: `/exhibitorId`). The Cosmos document model (`ProfileDocument`) maps to/from the domain entity. See [02-module-mapping.md](../../planning/02-module-mapping.md) and [04-data-migration.md](../../planning/04-data-migration.md).
 
 **Source:** [experience.exhibitor.profile.service](https://github.com/innovationsandmore/experience.exhibitor.profile.service) `develop` branch -- `Infrastructure/` folder.
 
@@ -26,7 +26,7 @@ The infrastructure layer owns the Cosmos DB data access for the Profiles module.
 - Create `DependencyInjection.cs` with `AddProfilesInfrastructure()`
 
 ### Out of Scope
-- Service layer (P1-04)
+- Service layer (see 04-profiles-service-layer)
 - Cosmos client setup (that is in Common and wired in Host)
 
 ## Implementation Tasks

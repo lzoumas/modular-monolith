@@ -2,7 +2,7 @@
 name: Technical Task
 about: Profile integration test coverage
 title: '[Tech] Profile integration tests'
-labels: technical, phase-1, profiles, testing
+labels: technical, profiles-module, testing
 assignees: ''
 ---
 
@@ -17,13 +17,13 @@ Integration tests verify the full stack works end-to-end with a real Cosmos DB i
 ## Scope
 
 ### In Scope
-- WebApplicationFactory-based test setup targeting `ExhibitorPlatform.Host`
+- WebApplicationFactory-based test setup targeting `ExhibitorPlatform.WebApi`
 - Cosmos DB emulator via `CosmosDbFixture` (Testcontainers)
 - HTTP tests for all CRUD endpoints
 - Discard draft endpoint test
 
 ### Out of Scope
-- Publish workflow end-to-end (requires Service Bus -- covered in P1-10 verification)
+- Publish workflow end-to-end (requires Service Bus -- covered in publish-workflow/04-verification)
 - Azure Function integration tests
 - Performance testing
 
@@ -32,7 +32,7 @@ Integration tests verify the full stack works end-to-end with a real Cosmos DB i
 ### Test Infrastructure
 - [ ] Create `Profiles/Exhibitor.Profiles.Tests.Integration/Exhibitor.Profiles.Tests.Integration.csproj`:
   - Target `net9.0`
-  - Reference `ExhibitorPlatform.Host`
+  - Reference `ExhibitorPlatform.WebApi`
   - Reference `Exhibitor.Common.Cosmos.Testing`
   - Add NuGet packages: `xunit`, `xunit.runner.visualstudio`, `Microsoft.AspNetCore.Mvc.Testing`, `FluentAssertions`, `Bogus`
 - [ ] Create `ExhibitorPlatformCosmosDbFixture.cs`:

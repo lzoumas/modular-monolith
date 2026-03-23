@@ -1,4 +1,4 @@
-﻿# Module Mapping
+# Module Mapping
 
 How the Profile service source repo maps into the modular monolith. Phase 1 focuses on Profiles only -- Brands follows the same pattern later.
 
@@ -24,12 +24,12 @@ How the Profile service source repo maps into the modular monolith. Phase 1 focu
 
 > All module and common projects are grouped under a **`Modules`** solution folder in Visual Studio. On disk, each module has its own folder at the repo root. See [00-overview](00-overview.md) for the full layout.
 
-### Host -- `ExhibitorPlatform.Host`
+### Host -- `ExhibitorPlatform.WebApi`
 
 Single ASP.NET Core host. Replaces the Azure Functions `Program.cs`.
 
 ```
-ExhibitorPlatform.Host/
+ExhibitorPlatform.WebApi/
   Program.cs                    # DI wiring, middleware, Cosmos setup, health checks
   appsettings.json
   appsettings.Development.json
