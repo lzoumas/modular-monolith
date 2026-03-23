@@ -68,4 +68,5 @@ tests/
 | [03-integration-points.md](03-integration-points.md) | 🔲 | Cross-module communication & PublicApi design |
 | [04-data-migration.md](04-data-migration.md) | 🔲 | Cosmos DB strategy (containers, partitioning) |
 | [05-migration-plan.md](05-migration-plan.md) | 🔲 | Phased rollout & task breakdown |
-| [06-open-questions.md](06-open-questions.md) | 🔲 | Decisions to make, unknowns |
+| [06-background-and-event-driven.md](06-background-and-event-driven.md) | 🔲 | Service Bus, Timer, and background workload strategy |
+| [07-open-questions.md](07-open-questions.md) | 🔲 | Decisions to make, unknowns |

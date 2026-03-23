@@ -100,9 +100,11 @@ Use `Swashbuckle.AspNetCore` (already in reference monolith). Confirm that Swagg
 ## Code Questions
 
 ### 10. What Service Bus functionality is needed?
-**Status:** 🔲 Needs investigation
+**Status:** 🟡 In progress — see [06-background-and-event-driven.md](06-background-and-event-driven.md)
 
-`Platform.Shared.ServiceBus` is available. Does either service publish or consume Service Bus messages? If so, that logic moves to the Host or to a shared background service.
+`Platform.Shared.ServiceBus` is available. Does either service publish or consume Service Bus messages? If so, that logic moves to `BackgroundService` classes within each module.
+
+See [06-background-and-event-driven.md](06-background-and-event-driven.md) for the full strategy covering Service Bus listeners, Timer replacements, and the recommended approach.
 
 ### 11. What external HTTP calls exist?
 **Status:** 🔲 Needs investigation
