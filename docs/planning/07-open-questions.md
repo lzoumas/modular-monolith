@@ -26,12 +26,10 @@ With FastEndpoints, HTTP endpoints handle their own request/response flow. Share
 
 A separate `ExhibitorPlatform.Functions` project handles Service Bus triggers. It references the same module projects as the Host (no HTTP hop). Azure Functions provides automatic retry, dead-lettering, and independent scaling. See [06-background-and-event-driven](06-background-and-event-driven.md).
 
-### 5. Cosmos DB - Shared database, keep existing containers
+### 5. Cosmos DB - New database, no migration needed
 **Status:** DECIDED
 
-Same Cosmos DB instance, same containers, same partition keys. No data migration needed for Phase 1.
-
-- `profiles` partition key: `/exhibitorId`
+Greenfield -- no production data exists. New `ExhibitorPlatformDb` database with module-owned containers. Cosmos DB emulator for local dev. See [04-data-migration](04-data-migration.md).
 
 ### 6. Swagger / OpenAPI - Scalar
 **Status:** DECIDED
@@ -64,13 +62,6 @@ Current Function Apps likely use Function Keys or Azure AD / Entra ID. The Web A
 **Status:** TODO
 
 Search the Profile service for `HttpClient` / `ManagedIdentityApiClient` usage. These are calls to external services and will need to be preserved in the monolith.
-
-### 11. Production Cutover Strategy
-**Status:** TODO
-
-When do we cut over the Profiles service? Options:
-- **Big bang:** Deploy monolith, switch DNS, decommission old Function App
-- **Parallel run:** Both old and new running, traffic migration via feature flags
 
 ---
 

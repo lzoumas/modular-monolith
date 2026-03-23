@@ -259,7 +259,7 @@ Client -> DiscardDraftEndpoint -> IProfileService -> IProfileRepository -> Cosmo
 | [01-repo-inventory.md](01-repo-inventory.md) | Done | Detailed audit of each source repo |
 | [02-module-mapping.md](02-module-mapping.md) | Done | Profiles module structure, endpoint pattern, service layer |
 | [03-integration-points.md](03-integration-points.md) | Done | PublicApi interface design & dependency rules |
-| [04-data-migration.md](04-data-migration.md) | Done | Cosmos DB strategy -- single database, module-owned containers |
-| [05-migration-plan.md](05-migration-plan.md) | Done | Phased rollout & task breakdown |
+| [04-data-migration.md](04-data-migration.md) | Done | Cosmos DB setup -- greenfield, no migration needed |
+| [05-migration-plan.md](05-migration-plan.md) | Done | Phased build plan & task breakdown |
 | [06-background-and-event-driven.md](06-background-and-event-driven.md) | Done | Publish workflow -- API endpoint + Azure Function |
 | [07-open-questions.md](07-open-questions.md) | Done | Decisions resolved, remaining unknowns |

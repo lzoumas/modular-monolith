@@ -1,6 +1,6 @@
-﻿# Migration Plan
+﻿# Build Plan
 
-Phased rollout for consolidating the three exhibitor repos into the modular monolith.
+Phased build plan for the exhibitor platform modular monolith. This is greenfield -- the existing profile service has not gone past the dev environment, so there are no production migrations or cutovers.
 
 ---
 
@@ -19,7 +19,7 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
   - `Exhibitor.Common.Cosmos` (includes `CosmosDbDocument`, `PublishableDocument<T>`, `CosmosRepositoryBase`)
   - `Exhibitor.Common.Cosmos.Testing`
 - [ ] Wire up `AddCosmosDbClient()` in `Program.cs` with container definitions
-- [ ] Add `docker-compose.yml` for Cosmos DB emulator (or keep using local emulator)
+- [ ] Add `docker-compose.yml` for Cosmos DB emulator
 - [ ] Add `platform.shared` as a Git submodule or NuGet package reference
 - [ ] Update `.github/copilot-instructions.md` for new structure
 - [ ] Verify the host starts, health check returns healthy
@@ -28,7 +28,7 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 
 ## Phase 1: Profiles Module
 
-**Goal:** Fully working Profiles module with all endpoints migrated.
+**Goal:** Fully working Profiles module with all endpoints and publish workflow.
 
 ### 1a. Domain Layer
 - [ ] Create `Exhibitor.Profiles.Domain` project
@@ -47,9 +47,9 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Create `DependencyInjection.cs` -> `AddProfilesModule()`
 - [ ] Create service layer:
   - [ ] `Services/IProfileService.cs` -- internal service interface (CRUD + publish + discard)
-  - [ ] `Services/ProfileService.cs` -- business logic (migrated from `Application/Services/`)
+  - [ ] `Services/ProfileService.cs` -- business logic (from `Application/Services/`)
   - [ ] `Services/ProfileModuleApi.cs` -- implements `IProfileModuleApi`, delegates to `IProfileService`
-- [ ] Migrate each feature from `Application/Features/Profile/` as a vertical slice:
+- [ ] Build each feature as a vertical slice:
   - [ ] `CreateProfile/` -- FastEndpoints endpoint, request, response, validator, mapping
   - [ ] `GetProfile/` -- endpoint, response, mapping
   - [ ] `UpdateProfile/` -- endpoint, request, validator, mapping
@@ -62,14 +62,20 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Create `Exhibitor.Profiles.PublicApi` project
 - [ ] Define `IProfileModuleApi` interface
 - [ ] Add contract DTOs in `Contracts/`
+- [ ] Add `PublishProfileMessage` in `Messages/`
 
-### 1e. Tests
-- [ ] Migrate unit tests -> `tests/Exhibitor.Profiles.Tests.Unit/`
-- [ ] Migrate integration tests -> `tests/Exhibitor.Profiles.Tests.Integration/`
-- [ ] Update test fixture to use shared `CosmosDbFixture`
+### 1e. Azure Function
+- [ ] Add `PublishProfileFunction` to `ExhibitorPlatform.Functions`
+- [ ] Wire up Service Bus connection in Functions config
 
-### 1f. Verify
-- [ ] All profile endpoints working via Swagger
+### 1f. Tests
+- [ ] Create unit tests in `tests/Exhibitor.Profiles.Tests.Unit/`
+- [ ] Create integration tests in `tests/Exhibitor.Profiles.Tests.Integration/`
+- [ ] Set up `CosmosDbFixture` for integration tests
+
+### 1g. Verify
+- [ ] All profile endpoints working via Scalar UI
+- [ ] Publish workflow end-to-end (endpoint -> Service Bus -> Function -> Cosmos)
 - [ ] All unit tests passing
 - [ ] All integration tests passing
 
@@ -77,7 +83,7 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 
 ## Phase 2: Brands Module
 
-**Goal:** Fully working Brands module with all endpoints migrated.
+**Goal:** Fully working Brands module following the same pattern as Profiles.
 
 ### 2a. Domain Layer
 - [ ] Create `Exhibitor.Brands.Domain` project
@@ -87,15 +93,14 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 
 ### 2b. Infrastructure Layer
 - [ ] Create `Exhibitor.Brands.Infrastructure` project
-- [ ] Move repository interfaces
-- [ ] Move Cosmos repository implementations
+- [ ] Move repository interfaces and Cosmos implementations
 - [ ] Wire up `Platform.Shared.FileStorage` for media uploads
 - [ ] Create `DependencyInjection.cs` -> `AddBrandsInfrastructure()`
 
 ### 2c. Features Layer
 - [ ] Create `Exhibitor.Brands.Features` project
 - [ ] Create `DependencyInjection.cs` -> `AddBrandsModule()`
-- [ ] Migrate each feature as a vertical slice:
+- [ ] Build each feature as a vertical slice:
   - [ ] Brand CRUD (Create, Get, Update, Delete, List)
   - [ ] ExhibitorBrand CRUD
   - [ ] BrandRequest workflow (Submit, Approve, Reject, Get)
@@ -110,11 +115,11 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Add contract DTOs in `Contracts/`
 
 ### 2e. Tests
-- [ ] Migrate unit tests -> `tests/Exhibitor.Brands.Tests.Unit/`
-- [ ] Migrate integration tests -> `tests/Exhibitor.Brands.Tests.Integration/`
+- [ ] Create unit tests in `tests/Exhibitor.Brands.Tests.Unit/`
+- [ ] Create integration tests in `tests/Exhibitor.Brands.Tests.Integration/`
 
 ### 2f. Verify
-- [ ] All brand endpoints working via Swagger
+- [ ] All brand endpoints working via Scalar UI
 - [ ] All tests passing
 
 ---
@@ -123,24 +128,20 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 
 **Goal:** Wire up any cross-module communication.
 
-- [ ] Identify actual HTTP calls between current services (search source code for `HttpClient` / `ManagedIdentityApiClient` usage)
+- [ ] Identify actual cross-module calls needed (search source code for `HttpClient` / `ManagedIdentityApiClient` usage)
 - [ ] Replace with PublicApi interface calls
 - [ ] Register PublicApi implementations in `Program.cs`
 - [ ] Test cross-module scenarios end-to-end
 
 ---
 
-## Phase 4: CI/CD & Deployment
+## Phase 4: CI/CD
 
-**Goal:** Production-ready pipeline.
+**Goal:** Automated build and deploy pipeline.
 
 - [ ] Set up GitHub Actions workflow for build + test
-- [ ] Configure Azure deployment (App Service / Container App)
+- [ ] Configure Azure deployment (App Service or Container App -- TBD)
 - [ ] Set up environment-specific configuration (dev, qa, uat, prod)
-- [ ] Update Cosmos DB connection strings for new database
-- [ ] Migrate production data (see [04-data-migration](04-data-migration.md))
-- [ ] DNS / routing cutover from Function App endpoints to new API
-- [ ] Decommission old Function Apps
 
 ---
 
@@ -152,5 +153,5 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 | Phase 1 | Profiles module | 3--5 days |
 | Phase 2 | Brands module | 5--7 days (more models, file upload) |
 | Phase 3 | Cross-module wiring | 1--2 days |
-| Phase 4 | CI/CD & deployment | 2--3 days |
-| **Total** | | **~12--19 days** |
+| Phase 4 | CI/CD | 1--2 days |
+| **Total** | | **~11--18 days** |
