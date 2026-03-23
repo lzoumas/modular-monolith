@@ -1,328 +1,357 @@
 # Background & Event-Driven Workloads
 
-How to handle Service Bus triggers, Timer triggers, and other non-HTTP workloads in an ASP.NET Core host that is primarily an API.
+How the publish workflow runs across two entry points: the **API Host** (HTTP) and **Azure Functions** (Service Bus).
 
 ---
 
-## Problem Statement
+## Architecture
 
-The current Azure Functions apps get Service Bus triggers and Timer triggers "for free" — the Functions runtime handles message dispatch, retries, and scheduling. An ASP.NET Core Web API host has **no built-in equivalent**. We need a strategy for running background and event-driven work alongside the HTTP API.
+Two deployable projects share the same module code. The API Host handles HTTP requests. Azure Functions handles Service Bus messages. Both resolve services from the same module DI registrations � no HTTP hop between them.
+
+```
+                 ??????????????????????????????
+  HTTP ????????? ?   ExhibitorPlatform.Host   ????
+                 ??????????????????????????????  ?
+                                                 ?  project reference
+                                                 ?
+                                    ??????????????????????????
+                                    ?   Shared Module Code   ?
+                                    ?                        ?
+                                    ?  Profiles.Features     ?
+                                    ?  Profiles.Infra        ?
+                                    ?  Common.*              ?
+                                    ??????????????????????????
+                                                 ?
+                                                 ?  project reference
+                 ??????????????????????????????  ?
+  Service Bus ?? ? ExhibitorPlatform.Functions????
+                 ??????????????????????????????
+```
+
+**Why Azure Functions instead of `BackgroundService`?**
+
+The publish workflow sends data to an **external system**. If that system is down, Azure Functions automatically retries the message and dead-letters it after max attempts. With `BackgroundService` you'd build all of that yourself. Functions also scale independently from the API host.
 
 ---
 
-## Current Usage (Needs Investigation)
+## Publish Flow (Profiles)
 
-Before choosing an approach, audit both source repos for non-HTTP triggers:
-
-| Trigger Type | Profile Service | Brands Service | Notes |
-|---|---|---|---|
-| **ServiceBusTrigger** | 🔲 Investigate | 🔲 Investigate | Search for `ServiceBusTrigger`, `Platform.Shared.ServiceBus` usage |
-| **TimerTrigger** | 🔲 Investigate | 🔲 Investigate | Search for `TimerTrigger`, scheduled/cron tasks |
-| **BlobTrigger** | 🔲 Investigate | 🔲 Investigate | Unlikely, but check for file-processing triggers |
-| **QueueTrigger** | 🔲 Investigate | 🔲 Investigate | Storage Queue triggers |
-
-> **Action item:** Grep both repos for `[Function(`, `ServiceBusTrigger`, `TimerTrigger`, `BlobTrigger`, `QueueTrigger` to build the definitive list.
+```
+User clicks "Publish"
+        ?
+        ?
+????????????????????????
+?  ExhibitorPlatform   ?
+?       .Host          ?
+?                      ?
+?  POST /profiles/     ?
+?  {exhibitorId}/      ?
+?  {profileId}/publish ???????? Service Bus: "profile-publish" queue
+?                      ?        Payload: { exhibitorId, profileId, publishedBy }
+?  Returns: 202        ?
+?  Accepted            ?
+????????????????????????
+                                        ?
+                                        ?
+                              ????????????????????????
+                              ?  ExhibitorPlatform   ?
+                              ?     .Functions       ?
+                              ?                      ?
+                              ?  ServiceBusTrigger   ?
+                              ?  "profile-publish"   ?
+                              ?                      ?
+                              ?  1. Publish profile  ???? IProfileModuleApi.PublishAsync()
+                              ?  2. Transform        ?
+                              ?  3. Send to external ???? HTTP to external system
+                              ????????????????????????
+```
 
 ---
 
-## Approaches
+## The API Endpoint
 
-### Option A: `IHostedService` / `BackgroundService` (Recommended for most cases)
-
-ASP.NET Core has a built-in abstraction for long-running background work. Each background task is a class that extends `BackgroundService` and runs on a separate thread inside the same process.
-
-**How it works:**
+The publish endpoint is thin � validate, drop a message on the queue, return `202 Accepted`. The actual publish logic runs asynchronously in the Function.
 
 ```csharp
-// Runs inside the same ASP.NET Core host alongside the API
-public class BrandRequestProcessor : BackgroundService
-{
-    private readonly ServiceBusProcessor _processor;
+// Exhibitor.Profiles.Features/Features/PublishProfile/PublishProfileEndpoint.cs
 
-    public BrandRequestProcessor(ServiceBusClient client)
+public sealed class PublishProfileEndpoint : EndpointWithoutRequest
+{
+    private readonly ServiceBusSender _sender;
+
+    public PublishProfileEndpoint(ServiceBusSender sender)
     {
-        _processor = client.CreateProcessor("brand-requests", "monolith-sub");
+        _sender = sender;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public override void Configure()
     {
-        _processor.ProcessMessageAsync += HandleMessageAsync;
-        _processor.ProcessErrorAsync += HandleErrorAsync;
-        await _processor.StartProcessingAsync(stoppingToken);
-
-        // Keep alive until shutdown
-        await Task.Delay(Timeout.Infinite, stoppingToken);
+        Post("/api/profiles/{exhibitorId}/{profileId}/publish");
     }
 
-    private async Task HandleMessageAsync(ProcessMessageEventArgs args)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        // Deserialize, dispatch to handler (Platform.Shared.Mediator command)
-        await args.CompleteMessageAsync(args.Message);
-    }
-}
-```
+        var exhibitorId = Route<string>("exhibitorId")!;
+        var profileId = Route<string>("profileId")!;
+        var publishedBy = User.Identity?.Name ?? "system";
 
-**Registration in `Program.cs`:**
-```csharp
-builder.Services.AddHostedService<BrandRequestProcessor>();
-```
-
-**Pros:**
-- Built into ASP.NET Core — zero extra dependencies
-- Runs in-process — can inject the same services, repos, DbContexts
-- Simple to understand and debug
-- Supports both message listeners and periodic timers
-
-**Cons:**
-- If the API host crashes, background work stops too (same process)
-- No built-in retry/dead-letter policies — you manage them via the Azure SDK
-- Scaling is coupled to the API host (can't scale consumers independently)
-
----
-
-### Option B: Separate Worker Service Project
-
-A standalone `dotnet worker` project (no HTTP) dedicated to background processing.
-
-```
-ExhibitorPlatform.Host/          # API only
-ExhibitorPlatform.Worker/        # Background jobs only
-```
-
-**How it works:**
-```csharp
-// ExhibitorPlatform.Worker/Program.cs
-var builder = Host.CreateDefaultBuilder(args);
-builder.ConfigureServices(services =>
-{
-    services.AddProfilesInfrastructure();
-    services.AddBrandsInfrastructure();
-    services.AddHostedService<BrandRequestProcessor>();
-    services.AddHostedService<ProfileCleanupJob>();
-});
-
-var host = builder.Build();
-await host.RunAsync();
-```
-
-**Pros:**
-- Clean separation — API and workers scale independently
-- Worker crashes don't affect API availability
-- Can deploy workers to different infra (Container App Job, AKS pod, etc.)
-
-**Cons:**
-- Two deployables to manage instead of one (partially defeats the monolith simplification goal)
-- Shared code (domain, infra) needs to be project-referenced by both Host and Worker
-- DI registration is duplicated across both programs
-
----
-
-### Option C: Keep Azure Functions for Triggers Only (Hybrid)
-
-Keep a lightweight Azure Functions app *only* for triggers. It receives the event and immediately forwards work to the monolith API via HTTP or a shared service layer.
-
-```
-ExhibitorPlatform.Host/            # Full API + business logic
-ExhibitorPlatform.Triggers/       # Thin Azure Functions app — just triggers
-```
-
-**The Function becomes a thin forwarder:**
-```csharp
-[Function("ProcessBrandRequest")]
-public async Task Run(
-    [ServiceBusTrigger("brand-requests", "exhibitor-sub")] ServiceBusReceivedMessage message)
-{
-    // Forward to the monolith API
-    var command = message.Body.ToObjectFromJson<ProcessBrandRequestCommand>();
-    await _httpClient.PostAsJsonAsync("/internal/brands/process-request", command);
-}
-```
-
-**Pros:**
-- Zero changes to existing trigger code (minimal migration effort)
-- Azure Functions handles retries, dead-lettering, scaling automatically
-- Clear boundary: Functions = event ingress, Host = business logic
-
-**Cons:**
-- Still have an Azure Functions app to deploy and manage
-- Network hop between Functions and Host
-- Auth between the two apps
-- Feels like keeping the microservice split for these specific flows
-
----
-
-### Option D: Azure Container Apps Jobs (for Timer-Based Work)
-
-If Timer triggers are being used for scheduled cleanup, data sync, or similar batch jobs, **Azure Container App Jobs** are a modern alternative.
-
-**Pros:**
-- Scale to zero (no cost when not running)
-- Cron-based scheduling built in
-- Can share the same container image as the API
-
-**Cons:**
-- More complex infrastructure (Container Apps required)
-- Overkill if there are only 1-2 timer jobs
-
----
-
-## Recommendation Matrix
-
-| Scenario | Recommended Approach |
-|---|---|
-| **1-3 Service Bus consumers** | **Option A** — `BackgroundService` in the Host |
-| **1-2 Timer/cron jobs** | **Option A** — `BackgroundService` with `PeriodicTimer` |
-| **Heavy message processing (high throughput)** | **Option B** — Separate Worker Service |
-| **Need independent scaling for consumers** | **Option B** — Separate Worker Service |
-| **Want minimal migration effort for triggers** | **Option C** — Hybrid with Azure Functions |
-| **Scheduled batch jobs at scale** | **Option D** — Container App Jobs |
-
----
-
-## Timer Trigger Replacement Pattern
-
-Azure Functions `TimerTrigger` → `BackgroundService` with `PeriodicTimer`:
-
-```csharp
-public class ProfileCleanupJob : BackgroundService
-{
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly PeriodicTimer _timer = new(TimeSpan.FromHours(24));
-
-    public ProfileCleanupJob(IServiceScopeFactory scopeFactory)
-    {
-        _scopeFactory = scopeFactory;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (await _timer.WaitForNextTickAsync(stoppingToken))
+        var message = new ServiceBusMessage(BinaryData.FromObjectAsJson(new PublishProfileMessage
         {
-            using var scope = _scopeFactory.CreateScope();
-            var handler = scope.ServiceProvider.GetRequiredService<ICommandHandler<CleanupDeletedProfilesCommand, Result>>();
-            await handler.HandleAsync(new CleanupDeletedProfilesCommand(), stoppingToken);
+            ExhibitorId = exhibitorId,
+            ProfileId = profileId,
+            PublishedBy = publishedBy
+        }));
+
+        await _sender.SendMessageAsync(message, ct);
+
+        await SendAsync(null, 202, ct);
+    }
+}
+```
+
+---
+
+## The Azure Function
+
+The Function is the orchestrator. It calls `IProfileModuleApi` to publish the profile, transforms the result, and sends it to the external system.
+
+```csharp
+// ExhibitorPlatform.Functions/Functions/Profiles/PublishProfileFunction.cs
+
+public class PublishProfileFunction
+{
+    private readonly IProfileModuleApi _profileApi;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<PublishProfileFunction> _logger;
+
+    public PublishProfileFunction(
+        IProfileModuleApi profileApi,
+        IHttpClientFactory httpClientFactory,
+        ILogger<PublishProfileFunction> logger)
+    {
+        _profileApi = profileApi;
+        _httpClientFactory = httpClientFactory;
+        _logger = logger;
+    }
+
+    [Function("PublishProfile")]
+    public async Task Run(
+        [ServiceBusTrigger("profile-publish", Connection = "ServiceBusConnection")]
+        ServiceBusReceivedMessage message,
+        FunctionContext context)
+    {
+        var payload = message.Body.ToObjectFromJson<PublishProfileMessage>();
+
+        _logger.LogInformation("Publishing profile {ProfileId} for exhibitor {ExhibitorId}",
+            payload.ProfileId, payload.ExhibitorId);
+
+        // 1. Publish the profile (draft ? published) via PublicApi
+        var publishResult = await _profileApi.PublishAsync(
+            payload.ExhibitorId, payload.ProfileId, payload.PublishedBy);
+
+        if (!publishResult.IsSuccess)
+        {
+            _logger.LogError("Failed to publish profile {ProfileId}: {Errors}",
+                payload.ProfileId, string.Join(", ", publishResult.Errors));
+            throw new InvalidOperationException($"Publish failed for profile {payload.ProfileId}");
+            // Throwing ? message retried ? dead-lettered after max attempts
         }
+
+        var published = publishResult.Value;
+
+        // 2. Transform for external system
+        var externalPayload = new ExternalProfilePayload
+        {
+            ExhibitorId = published.ExhibitorId,
+            CompanyName = published.CompanyName,
+            Contact = new ExternalContact
+            {
+                FirstName = published.Content.ShowroomContact.FirstName,
+                LastName = published.Content.ShowroomContact.LastName,
+                Email = published.Content.ShowroomContact.Email,
+                Phone = published.Content.ShowroomContact.Phone
+            },
+            Website = published.Content.CompanyContact.Website,
+            PublishedAt = published.PublishedOn
+        };
+
+        // 3. Send to external system
+        var client = _httpClientFactory.CreateClient("ExternalCatalogApi");
+        var response = await client.PostAsJsonAsync("/api/exhibitors/sync", externalPayload);
+        response.EnsureSuccessStatusCode();
+        // If this throws ? message retried automatically
+
+        _logger.LogInformation("Profile {ProfileId} published and synced to external system",
+            payload.ProfileId);
     }
 }
 ```
 
 ---
 
-## Service Bus Listener Pattern
+## Message Contract
 
-Azure Functions `ServiceBusTrigger` → `BackgroundService` with `ServiceBusProcessor`:
+Lives in the PublicApi project so both the Host (sender) and Functions (receiver) can reference it.
 
 ```csharp
-public class BrandEventListener : BackgroundService
+// Exhibitor.Profiles.PublicApi/Messages/PublishProfileMessage.cs
+namespace Exhibitor.Profiles.PublicApi.Messages;
+
+public record PublishProfileMessage
 {
-    private readonly ServiceBusClient _client;
-    private readonly IServiceScopeFactory _scopeFactory;
+    public string ExhibitorId { get; init; } = string.Empty;
+    public string ProfileId { get; init; } = string.Empty;
+    public string PublishedBy { get; init; } = string.Empty;
+}
+```
 
-    public BrandEventListener(ServiceBusClient client, IServiceScopeFactory scopeFactory)
-    {
-        _client = client;
-        _scopeFactory = scopeFactory;
-    }
+---
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+## IProfileModuleApi
+
+The Functions project accesses the Profiles module **only** through this interface. The implementation (`ProfileModuleApi`) delegates to `IProfileService` internally.
+
+```csharp
+// Exhibitor.Profiles.PublicApi/IProfileModuleApi.cs
+namespace Exhibitor.Profiles.PublicApi;
+
+public interface IProfileModuleApi
+{
+    Task<Result<PublishedProfile>> PublishAsync(
+        string exhibitorId, string profileId, string publishedBy,
+        CancellationToken ct = default);
+
+    Task<PublishedProfile?> GetPublishedAsync(
+        string exhibitorId, string profileId,
+        CancellationToken ct = default);
+}
+```
+
+```csharp
+// Exhibitor.Profiles.PublicApi/Contracts/PublishedProfile.cs
+namespace Exhibitor.Profiles.PublicApi.Contracts;
+
+public record PublishedProfile(
+    string ProfileId,
+    string ExhibitorId,
+    string CompanyName,
+    ProfileContentSnapshot Content,
+    DateTime PublishedOn,
+    string PublishedBy);
+
+public record ProfileContentSnapshot(
+    ShowroomContactInfo ShowroomContact,
+    CompanyContactInfo CompanyContact,
+    SocialMediaInfo SocialMedia,
+    ShowroomPreferencesInfo ShowroomPreferences,
+    int[] ChannelIds);
+
+public record ShowroomContactInfo(string FirstName, string LastName, string Email, string Phone);
+public record CompanyContactInfo(string PhoneNumber, string PrimaryEmail, string Website, string City, string State);
+public record SocialMediaInfo(string? LinkedInUrl, string? InstagramUrl, string? FacebookUrl);
+public record ShowroomPreferencesInfo(int[] ShowroomDetails, int[] HoursOfOperation);
+```
+
+---
+
+## Functions `Program.cs`
+
+Registers the same module DI as the Host. The module code doesn't know which host is calling it.
+
+```csharp
+// ExhibitorPlatform.Functions/Program.cs
+var host = new HostBuilder()
+    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureServices((context, services) =>
     {
-        var processor = _client.CreateProcessor("brand-events", "monolith-sub", new ServiceBusProcessorOptions
+        var configuration = context.Configuration;
+
+        // Shared Cosmos infrastructure
+        services.AddCosmosDbClient(configuration);
+
+        // Profiles module � same registration as Host
+        services.AddProfilesModule();
+        services.AddProfilesInfrastructure(configuration);
+
+        // External system HTTP client
+        services.AddHttpClient("ExternalCatalogApi", client =>
         {
-            MaxConcurrentCalls = 5,
-            AutoCompleteMessages = false
+            client.BaseAddress = new Uri(configuration["ExternalSystems:CatalogApiUrl"]!);
         });
+    })
+    .Build();
 
-        processor.ProcessMessageAsync += async args =>
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var mediator = scope.ServiceProvider.GetRequiredService<ICommandHandler<ProcessBrandEventCommand, Result>>();
-
-            var command = args.Message.Body.ToObjectFromJson<ProcessBrandEventCommand>();
-            var result = await mediator.HandleAsync(command, args.CancellationToken);
-
-            if (result.IsSuccess)
-                await args.CompleteMessageAsync(args.Message, args.CancellationToken);
-            else
-                await args.AbandonMessageAsync(args.Message, cancellationToken: args.CancellationToken);
-        };
-
-        processor.ProcessErrorAsync += args =>
-        {
-            // Log error
-            return Task.CompletedTask;
-        };
-
-        await processor.StartProcessingAsync(stoppingToken);
-        await Task.Delay(Timeout.Infinite, stoppingToken);
-    }
-}
+host.Run();
 ```
 
 ---
 
-## Module Registration Pattern
-
-Background services register via the module's `DependencyInjection.cs`, keeping the Host's `Program.cs` clean:
-
-```csharp
-// Exhibitor.Brands.Features/DependencyInjection.cs
-public static IServiceCollection AddBrandsModule(this IServiceCollection services)
-{
-    // Handlers, validators, etc.
-    services.AddTransient<ICommandHandler<ProcessBrandEventCommand, Result>, ProcessBrandEventHandler>();
-
-    // Background services
-    services.AddHostedService<BrandEventListener>();
-
-    return services;
-}
-```
-
-The Host doesn't need to know about individual background services — each module registers its own.
-
----
-
-## Folder Structure for Background Features
-
-Background workers follow the same vertical-slice pattern, just without an endpoint:
+## Where Everything Lives
 
 ```
-Features/
-  ProcessBrandEvent/
-    ProcessBrandEvent.cs            # Command + Handler (no endpoint)
-    ProcessBrandEvent.Validators.cs
-    ProcessBrandEvent.Mapping.cs
-  CleanupExpiredRequests/
-    CleanupExpiredRequests.cs       # Command + Handler (timer-driven)
+Profiles/
+  Exhibitor.Profiles.PublicApi/
+    IProfileModuleApi.cs                     # PublishAsync, GetPublishedAsync
+    Contracts/
+      PublishedProfile.cs                    # Published snapshot DTOs
+    Messages/
+      PublishProfileMessage.cs               # Service Bus message contract
+
+  Exhibitor.Profiles.Features/
+    Services/
+      IProfileService.cs                     # Internal service interface (CRUD + publish)
+      ProfileService.cs                      # Business logic implementation
+    Features/
+      PublishProfile/
+        PublishProfileEndpoint.cs            # FastEndpoints � sends SB message, returns 202
+      DiscardDraft/
+        DiscardDraftEndpoint.cs              # FastEndpoints � synchronous, no SB needed
+      CreateProfile/
+        CreateProfileEndpoint.cs
+        CreateProfileValidator.cs
+        CreateProfileMapping.cs
+      GetProfile/
+        GetProfileEndpoint.cs
+        GetProfileMapping.cs
+      UpdateProfile/
+        ...
+      DeleteProfile/
+        ...
+      ListProfiles/
+        ...
+
+  Exhibitor.Profiles.Domain/
+    Entities/
+      Profile.cs                             # Inherits PublishableEntity<ProfileContent>
+      ProfileContent.cs
+
+  Exhibitor.Profiles.Infrastructure/
+    Repositories/
+      ProfileRepository.cs
+    Interfaces/
+      IProfileRepository.cs
+
+ExhibitorPlatform.Functions/
+  Functions/
+    Profiles/
+      PublishProfileFunction.cs              # Orchestrates: publish ? transform ? send
+
+Common/
+  Exhibitor.Common.Application/
+    Models/
+      PublishableEntity.cs                   # Abstract base class
+    Interfaces/
+      IPublishableService.cs                 # Shared publish/discard interface
+  Exhibitor.Common.Cosmos/
+    Documents/
+      PublishableDocument.cs                 # Abstract base class
 ```
-
-The `BrandEventListener` or `CleanupJob` BackgroundService lives in the Features project root or a `BackgroundServices/` folder:
-
-```
-Exhibitor.Brands.Features/
-  BackgroundServices/
-    BrandEventListener.cs
-    ExpiredRequestCleanupJob.cs
-  Features/
-    ProcessBrandEvent/
-      ...
-    CleanupExpiredRequests/
-      ...
-```
-
----
-
-## Next Steps
-
-1. **Audit source repos** for all non-HTTP triggers (see table above)
-2. **Decide on approach** based on findings — likely Option A for a small number of triggers
-3. **Update [02-module-mapping](02-module-mapping.md)** to include background service mapping
-4. **Update [07-open-questions](07-open-questions.md)** — resolve question #10
 
 ---
 
 ## Related Documents
 
-- [00-overview.md](00-overview.md) — Architecture overview
-- [02-module-mapping.md](02-module-mapping.md) — Module structure (add background services)
-- [07-open-questions.md](07-open-questions.md) — Question #10 (Service Bus) is addressed here
+- [00-overview.md](00-overview.md) � Architecture overview
+- [02-module-mapping.md](02-module-mapping.md) � Full module structure
+- [03-integration-points.md](03-integration-points.md) � PublicApi interface design
+- [Draft/Publish Pattern](https://github.com/innovationsandmore/experience.exhibitor.profile.service/blob/feature/UXP-3481/docs/draft-publish-pattern.md) � Source domain pattern

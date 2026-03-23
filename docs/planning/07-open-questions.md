@@ -1,136 +1,81 @@
-# Open Questions
+# Decisions & Open Questions
 
-Decisions and unknowns to resolve before or during migration.
-
----
-
-## Architecture Decisions
-
-### 1. Endpoint Framework
-**Status:** 🟡 Needs decision
-
-| Option | Notes |
-|---|---|
-| **Minimal APIs** | Built-in, no extra dependency. Recommended — see [02-module-mapping](02-module-mapping.md). |
-| **Carter** | Used in the reference monolith. Adds `ICarterModule` per feature for auto-discovery. |
-| **FastEndpoints** | One class per endpoint, built-in validation/binding. More opinionated. |
-
-**Recommendation:** Minimal APIs. The handler pattern from `Platform.Shared.Mediator` stays unchanged — only the thin HTTP "shell" changes. No need for an extra framework.
-
-### 2. Result Pattern: `Ardalis.Result` vs `ErrorOr`
-**Status:** 🟡 Needs decision
-
-The current services use `Ardalis.Result`. The reference monolith uses `ErrorOr`.
-
-| Option | Notes |
-|---|---|
-| **Keep Ardalis.Result** | Zero changes to existing handler logic. Already well-integrated. |
-| **Switch to ErrorOr** | Matches reference monolith. Requires touching every handler. |
-
-**Recommendation:** Keep `Ardalis.Result`. It works, the handlers already return it, and switching adds risk with no functional benefit.
-
-### 3. `Platform.Shared.Mediator` vs MediatR
-**Status:** 🟡 Needs decision
-
-The reference monolith uses `MediatR`. The current services use the custom `Platform.Shared.Mediator`.
-
-| Option | Notes |
-|---|---|
-| **Keep Platform.Shared.Mediator** | Zero changes to handlers. Direct handler injection (no dispatch). |
-| **Switch to MediatR** | Pipeline behaviors, auto-registration, broader ecosystem. Requires rewriting all handlers. |
-
-**Recommendation:** Keep `Platform.Shared.Mediator`. It's simpler (direct injection), already works, and avoids a rewrite. MediatR can be adopted later if pipeline behaviors become necessary.
+Architecture decisions and remaining unknowns for the Profiles module (Phase 1).
 
 ---
 
-## Data Questions
+## Decided
 
-### 4. Cosmos DB: Shared vs Separate Databases
-**Status:** ✅ Recommended Option A (shared database)
+### 1. Endpoint Framework ? FastEndpoints
+**Status:** ? Decided
 
-See [04-data-migration](04-data-migration.md).
+One class per endpoint, built-in FluentValidation integration, Swagger support. Eliminates the need for separate CQRS command/query handler classes � the endpoint IS the handler for HTTP flows. Business logic that needs to be shared (e.g. publish) lives in service classes.
 
-### 5. Partition Key Strategy
-**Status:** 🟢 Keep as-is
+### 2. Result Pattern ? Keep `Ardalis.Result`
+**Status:** ? Decided
 
-Current partition keys are well-chosen for the access patterns:
-- `profiles` → `/exhibitorId`
-- `brands` → `/externalBrandId`
-- `exhibitorBrands` → `/exhibitorId`
-- `brandRequests` → `/exhibitorId`
+The current services already use `Ardalis.Result`. Zero migration effort. No functional benefit to switching to `ErrorOr`.
 
-No changes needed.
+### 3. CQRS / Mediator ? Not needed
+**Status:** ? Decided
 
-### 6. Production Data Migration Timing
-**Status:** 🔲 Needs planning
+With FastEndpoints, HTTP endpoints handle their own request/response flow. Shared business logic (publish, discard draft) lives in `IProfileService` / `ProfileService`. `Platform.Shared.Mediator` is not needed in the monolith � can be revisited later if pipeline behaviors become necessary.
 
-When do we cut over? Options:
-- **Big bang:** Migrate data, switch DNS, decommission old services in one go
-- **Parallel run:** Run both old and new simultaneously, sync data, then cut over
-- **Phased:** Migrate Profiles first, then Brands
+### 4. Background / Event-Driven ? Azure Functions (Isolated Worker)
+**Status:** ? Decided
+
+A separate `ExhibitorPlatform.Functions` project handles Service Bus triggers. It references the same module projects as the Host (no HTTP hop). Azure Functions provides automatic retry, dead-lettering, and independent scaling. See [06-background-and-event-driven](06-background-and-event-driven.md).
+
+### 5. Cosmos DB ? Shared database, keep existing containers
+**Status:** ? Decided
+
+Same Cosmos DB instance, same containers, same partition keys. No data migration needed for Phase 1.
+
+- `profiles` ? `/exhibitorId`
+
+### 6. Swagger / OpenAPI ? Scalar
+**Status:** ? Decided
+
+FastEndpoints has built-in support for Scalar (modern OpenAPI UI). No need for Swashbuckle.
+
+### 7. Remove Reference Monolith Demo Code ? Yes
+**Status:** ? Decided
+
+Remove Shipments, Carriers, Stocks demo modules. They've served their purpose as a pattern reference. The planning docs capture the patterns.
 
 ---
 
-## Infrastructure Questions
+## Open � Needs Investigation
 
-### 7. Hosting: App Service vs Container App
-**Status:** 🔲 Needs decision
+### 8. Authentication / Authorization
+**Status:** ?? Needs investigation
+
+Current Function Apps likely use Function Keys or Azure AD / Entra ID. The Web API will need bearer token auth. Investigate what the current services use and replicate.
+
+### 9. Hosting: App Service vs Container App
+**Status:** ?? Needs decision
 
 | Option | Notes |
 |---|---|
 | **Azure App Service** | Simple, familiar, easy scaling |
 | **Azure Container Apps** | Docker-based, better for complex deployments |
-| **AKS** | Overkill for a single monolith |
 
-### 8. Authentication / Authorization
-**Status:** 🔲 Needs investigation
+### 10. External HTTP Calls
+**Status:** ?? Needs investigation
 
-Current Function Apps likely use Function Keys or Azure AD. The Web API will need:
-- Azure AD / Entra ID bearer tokens?
-- API key middleware?
-- Same auth as current Functions?
+Search the Profile service for `HttpClient` / `ManagedIdentityApiClient` usage. These are calls to external services and will need to be preserved in the monolith.
 
-### 9. Swagger / OpenAPI Setup
-**Status:** 🟢 Straightforward
+### 11. Production Cutover Strategy
+**Status:** ?? Needs planning
 
-Use `Swashbuckle.AspNetCore` (already in reference monolith). Confirm that Swagger groups/tags match the current API docs organization.
-
----
-
-## Code Questions
-
-### 10. What Service Bus functionality is needed?
-**Status:** 🟡 In progress — see [06-background-and-event-driven.md](06-background-and-event-driven.md)
-
-`Platform.Shared.ServiceBus` is available. Does either service publish or consume Service Bus messages? If so, that logic moves to `BackgroundService` classes within each module.
-
-See [06-background-and-event-driven.md](06-background-and-event-driven.md) for the full strategy covering Service Bus listeners, Timer replacements, and the recommended approach.
-
-### 11. What external HTTP calls exist?
-**Status:** 🔲 Needs investigation
-
-Search for `HttpClient` / `ManagedIdentityApiClient` usage in both services. These may need to remain as HTTP calls (they're to external services, not between exhibitor modules).
-
-### 12. File Upload Endpoint Pattern
-**Status:** 🔲 Needs investigation
-
-The Brands service uses `Platform.Shared.Functions.Helpers.FileValidationHelpers` for multipart form parsing. In ASP.NET Core, this becomes `IFormFile` binding — need to adapt the upload endpoint accordingly.
-
-### 13. Remove Reference Monolith Demo Code?
-**Status:** 🟡 Needs decision
-
-The current repo has demo modules (Shipments, Carriers, Stocks). Should we:
-- **Remove them** and start clean with the exhibitor modules?
-- **Keep them** as reference examples alongside the real modules?
-
-**Recommendation:** Remove them. They've served their purpose as a pattern reference. The planning docs capture the patterns.
+When do we cut over the Profiles service? Options:
+- **Big bang:** Deploy monolith, switch DNS, decommission old Function App
+- **Parallel run:** Both old and new running, traffic migration via feature flags
 
 ---
 
 ## Tracking
 
-As questions are resolved, update the status:
-- 🔲 Not started
-- 🟡 Needs decision
-- 🟢 Decided
-- ✅ Implemented
+- ?? Not started
+- ?? In progress
+- ? Decided / Implemented
