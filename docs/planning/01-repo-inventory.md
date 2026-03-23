@@ -1,4 +1,4 @@
-# Repo Inventory
+﻿# Repo Inventory
 
 Detailed audit of each source repository's structure, domain models, features, and dependencies.
 
@@ -20,7 +20,7 @@ src/
   Exhibitor.Profile.Service.Application/     # Business logic layer
     DependencyInjection.cs
     Features/
-      Profile/                                # Vertical slice — commands, queries, handlers
+      Profile/                                # Vertical slice -- commands, queries, handlers
     Interfaces/                               # Repository interfaces
     Models/
       BaseEntity.cs                           # (from Exhibitor.Shared)
@@ -35,7 +35,7 @@ tests/
 
 ### Domain Models
 
-- **Profile** — exhibitor profile with company details, media, contacts, attributes, showroom preferences
+- **Profile** -- exhibitor profile with company details, media, contacts, attributes, showroom preferences
   - Partition key: `/exhibitorId`
   - Container: `profiles`
   - Supports multiple profiles per exhibitor (channel-based segmentation)
@@ -54,10 +54,10 @@ tests/
 
 ### Dependencies
 
-- `Platform.Shared.Mediator` — CQRS command/query handling
-- `Platform.Shared.Functions` — HTTP helpers, middleware, parameter attributes
-- `Exhibitor.Shared.Application` — BaseEntity
-- `Exhibitor.Shared.Cosmos` — CosmosClient, repositories, config, health checks
+- `Platform.Shared.Mediator` -- CQRS command/query handling
+- `Platform.Shared.Functions` -- HTTP helpers, middleware, parameter attributes
+- `Exhibitor.Shared.Application` -- BaseEntity
+- `Exhibitor.Shared.Cosmos` -- CosmosClient, repositories, config, health checks
 
 ---
 
@@ -102,16 +102,16 @@ tests/
 
 ### Domain Models
 
-- **Brand** — master brand catalog entry with CRM integration (`ExternalBrandId`)
+- **Brand** -- master brand catalog entry with CRM integration (`ExternalBrandId`)
   - Container: `brands`
   - Partition key: `/externalBrandId`
-- **ExhibitorBrand** — exhibitor-specific brand data (media, showroom attributes, product categories)
+- **ExhibitorBrand** -- exhibitor-specific brand data (media, showroom attributes, product categories)
   - Container: `exhibitorBrands`
   - Can be standalone or linked to an approved Brand
-- **BrandRequest** — brand request workflow/approval
+- **BrandRequest** -- brand request workflow/approval
   - Container: `brandRequests`
-- **Media / MediaItem** — media assets for brands
-- **ShowroomAttributes** — showroom display configuration
+- **Media / MediaItem** -- media assets for brands
+- **ShowroomAttributes** -- showroom display configuration
 
 ### Features
 
@@ -124,11 +124,11 @@ tests/
 
 ### Dependencies
 
-- `Platform.Shared.Mediator` — CQRS
-- `Platform.Shared.Functions` — HTTP helpers, middleware
-- `Platform.Shared.FileStorage` — File upload to Azure Blob Storage
-- `Exhibitor.Shared.Application` — BaseEntity
-- `Exhibitor.Shared.Cosmos` — CosmosClient, repositories
+- `Platform.Shared.Mediator` -- CQRS
+- `Platform.Shared.Functions` -- HTTP helpers, middleware
+- `Platform.Shared.FileStorage` -- File upload to Azure Blob Storage
+- `Exhibitor.Shared.Application` -- BaseEntity
+- `Exhibitor.Shared.Cosmos` -- CosmosClient, repositories
 
 ---
 
@@ -169,17 +169,17 @@ tests/
 
 | Component | Used By | Monolith Mapping |
 |---|---|---|
-| `BaseEntity` | All domain models | → `Common/Exhibitor.Common.Application` |
-| `CosmosDbConfig` | Infrastructure DI | → `Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbDocument` | Cosmos repositories | → `Common/Exhibitor.Common.Cosmos` |
-| `CosmosRepositoryBase` | All repositories | → `Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbHealthCheck` | Host health endpoint | → `Common/Exhibitor.Common.Cosmos` |
-| `AddCosmosDbClient()` | Program.cs setup | → `Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbFixture` | Integration tests | → `Common/Exhibitor.Common.Cosmos.Testing` |
+| `BaseEntity` | All domain models | -> `Common/Exhibitor.Common.Application` |
+| `CosmosDbConfig` | Infrastructure DI | -> `Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbDocument` | Cosmos repositories | -> `Common/Exhibitor.Common.Cosmos` |
+| `CosmosRepositoryBase` | All repositories | -> `Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbHealthCheck` | Host health endpoint | -> `Common/Exhibitor.Common.Cosmos` |
+| `AddCosmosDbClient()` | Program.cs setup | -> `Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbFixture` | Integration tests | -> `Common/Exhibitor.Common.Cosmos.Testing` |
 
 ---
 
-## 4. platform.shared (external — unchanged)
+## 4. platform.shared (external -- unchanged)
 
 **Repo:** https://github.com/innovationsandmore/platform.shared  
 **Type:** Class library (NuGet packages)
@@ -188,9 +188,9 @@ tests/
 
 | Library | Purpose | Used in Monolith? |
 |---|---|---|
-| `Platform.Shared.Mediator` | CQRS: ICommand, IQuery, ICommandHandler, IQueryHandler | ✅ Yes — keep as CQRS backbone |
-| `Platform.Shared.Functions` | Azure Functions HTTP helpers, middleware, parameter binding | ❌ No — replaced by ASP.NET Core middleware |
-| `Platform.Shared.Extensions` | General .NET extensions | ✅ Likely |
-| `Platform.Shared.FileStorage` | Azure Blob Storage abstraction | ✅ Yes — brands file upload |
-| `Platform.Shared.ServiceBus` | Azure Service Bus helpers | ⚠️ TBD — depends on async messaging needs |
-| `Platform.Shared.ManagedIdentityApiClient` | Azure AD managed identity HTTP client | ⚠️ TBD — depends on external API calls |
+| `Platform.Shared.Mediator` | CQRS: ICommand, IQuery, ICommandHandler, IQueryHandler | No -- replaced by FastEndpoints + service classes |
+| `Platform.Shared.Functions` | Azure Functions HTTP helpers, middleware, parameter binding | No -- replaced by ASP.NET Core middleware |
+| `Platform.Shared.Extensions` | General .NET extensions | Yes -- likely |
+| `Platform.Shared.FileStorage` | Azure Blob Storage abstraction | Yes -- brands file upload |
+| `Platform.Shared.ServiceBus` | Azure Service Bus helpers | Yes -- publish workflow via Azure Functions |
+| `Platform.Shared.ManagedIdentityApiClient` | Azure AD managed identity HTTP client | TBD -- depends on external API calls |

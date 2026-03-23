@@ -127,3 +127,14 @@ dotnet ef migrations add <Name> --project Stocks/Modules.Stocks.Infrastructure -
 2. Add `DependencyInjection.cs` to Features and Infrastructure projects.
 3. Register the module in `ModularMonolith.Host/Program.cs`.
 4. Add the projects to the solution file.
+
+## Markdown File Rules
+
+When creating or editing `.md` files in this repository:
+
+- **Use ASCII only.** Do not use emoji (e.g. no checkmarks, squares, warning signs), Unicode arrows, em-dashes, en-dashes, or box-drawing characters. These get corrupted by certain tools and editors.
+- Use `--` instead of em-dash or en-dash.
+- Use `->` and `<-` instead of Unicode arrows.
+- Use `|--` and `+--` for tree diagrams instead of box-drawing characters (e.g. no `├`, `└`, `│`).
+- Use `+----+` and `|    |` for ASCII art boxes instead of Unicode box-drawing.
+- Use plain text for status labels: `Done`, `TODO`, `IN PROGRESS`, `DECIDED`, `Yes`, `No`, `TBD`.

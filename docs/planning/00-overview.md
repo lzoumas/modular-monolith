@@ -1,4 +1,4 @@
-# Consolidation Overview
+﻿# Consolidation Overview
 
 ## Goal
 
@@ -6,7 +6,7 @@ Consolidate three separate Azure Functions microservices into a single **ASP.NET
 
 ### Phase 1 Scope: Profiles Only
 
-Phase 1 builds the full architecture with the **Profiles module** — API endpoints (FastEndpoints) + publish workflow (Azure Functions). Once the architecture is proven, Brands follows the same pattern in Phase 2.
+Phase 1 builds the full architecture with the **Profiles module** -- API endpoints (FastEndpoints) + publish workflow (Azure Functions). Once the architecture is proven, Brands follows the same pattern in Phase 2.
 
 ## Source Repositories
 
@@ -14,7 +14,7 @@ Phase 1 builds the full architecture with the **Profiles module** — API endpoi
 |---|---|---|---|---|
 | [experience.exhibitor.profile.service](https://github.com/innovationsandmore/experience.exhibitor.profile.service) | `develop` | Exhibitor profile management (CRUD, media, contacts, showroom) | Azure Functions (Isolated Worker) .NET 10 | Cosmos DB |
 | [experience.exhibitor.brands.service](https://github.com/innovationsandmore/experience.exhibitor.brands.service) | `develop` | Brand catalog, exhibitor brands, brand requests, file uploads | Azure Functions (Isolated Worker) .NET 10 | Cosmos DB |
-| [experience.exhibitor.shared.service](https://github.com/innovationsandmore/experience.exhibitor.shared.service) | `main` | Shared library — BaseEntity, Cosmos DB client/config/repositories, health checks, test fixtures | Class library .NET 10 | — |
+| [experience.exhibitor.shared.service](https://github.com/innovationsandmore/experience.exhibitor.shared.service) | `main` | Shared library -- BaseEntity, Cosmos DB client/config/repositories, health checks, test fixtures | Class library .NET 10 | -- |
 
 ## External Dependency (unchanged)
 
@@ -22,15 +22,15 @@ Phase 1 builds the full architecture with the **Profiles module** — API endpoi
 |---|---|
 | [platform.shared](https://github.com/innovationsandmore/platform.shared) | Cross-cutting: Mediator (ICommand/IQuery CQRS), Azure Functions helpers, file storage, service bus, managed identity API client, extensions |
 
-`platform.shared` stays as-is. The new monolith will reference the libraries it needs (e.g. `Platform.Shared.Mediator`, `Platform.Shared.FileStorage`, `Platform.Shared.ServiceBus`) as project references or NuGet packages.
+`platform.shared` stays as-is. The new monolith will reference the libraries it needs (e.g. `Platform.Shared.FileStorage`, `Platform.Shared.ServiceBus`) as project references or NuGet packages. `Platform.Shared.Mediator` is not needed -- FastEndpoints handles HTTP dispatch and service classes handle shared business logic.
 
 ## Key Architecture Changes
 
 | Concern | Current (microservices) | Target (modular monolith) |
 |---|---|---|
-| **Host** | 2× Azure Functions apps | 1× ASP.NET Core Web API + 1× Azure Functions (triggers only) |
+| **Host** | 2x Azure Functions apps | 1x ASP.NET Core Web API + 1x Azure Functions (triggers only) |
 | **Endpoints** | Azure Functions HTTP triggers | FastEndpoints (one class per endpoint) |
-| **Business logic** | `Platform.Shared.Mediator` handlers | Service classes (`IProfileService`) — no mediator needed |
+| **Business logic** | `Platform.Shared.Mediator` handlers | Service classes (`IProfileService`) -- no mediator needed |
 | **Validation** | FluentValidation | FluentValidation (same, built into FastEndpoints) |
 | **Error handling** | `Ardalis.Result` | `Ardalis.Result` (unchanged) |
 | **Database** | Cosmos DB | Cosmos DB (same containers, same partition keys) |
@@ -76,13 +76,13 @@ repo-root/
 │   └── appsettings.{env}.json                     # dev, qa, uat, prod
 │
 ├── ExhibitorPlatform.Functions/
-│   ├── Program.cs                                 # DI wiring — registers same modules as Host
+│   ├── Program.cs                                 # DI wiring -- registers same modules as Host
 │   ├── ExhibitorPlatform.Functions.csproj
 │   ├── host.json
 │   ├── appsettings.json
 │   └── Functions/
 │       └── Profiles/
-│           └── PublishProfileFunction.cs           # ServiceBusTrigger → publish → transform → send
+│           └── PublishProfileFunction.cs           # ServiceBusTrigger -> publish -> transform -> send
 │
 ├── Profiles/
 │   ├── Exhibitor.Profiles.Domain/
@@ -99,18 +99,18 @@ repo-root/
 │   │
 │   ├── Exhibitor.Profiles.Features/
 │   │   ├── Exhibitor.Profiles.Features.csproj
-│   │   ├── DependencyInjection.cs                 # AddProfilesModule() — registers services, validators
+│   │   ├── DependencyInjection.cs                 # AddProfilesModule() -- registers services, validators
 │   │   ├── Services/
 │   │   │   ├── IProfileService.cs                 # Internal: CRUD + publish + discard
 │   │   │   ├── ProfileService.cs                  # Business logic implementation
-│   │   │   └── ProfileModuleApi.cs                # Implements IProfileModuleApi → delegates to IProfileService
+│   │   │   └── ProfileModuleApi.cs                # Implements IProfileModuleApi -> delegates to IProfileService
 │   │   └── Features/
 │   │       ├── CreateProfile/
 │   │       │   ├── CreateProfileEndpoint.cs        # FastEndpoints endpoint
 │   │       │   ├── CreateProfileRequest.cs
 │   │       │   ├── CreateProfileResponse.cs
 │   │       │   ├── CreateProfileValidator.cs       # FluentValidation
-│   │       │   └── CreateProfileMapping.cs         # Request ↔ Domain mapping
+│   │       │   └── CreateProfileMapping.cs         # Request <-> Domain mapping
 │   │       ├── GetProfile/
 │   │       │   ├── GetProfileEndpoint.cs
 │   │       │   ├── GetProfileResponse.cs
@@ -129,11 +129,11 @@ repo-root/
 │   │       ├── PublishProfile/
 │   │       │   └── PublishProfileEndpoint.cs       # Sends SB message, returns 202
 │   │       └── DiscardDraft/
-│   │           └── DiscardDraftEndpoint.cs          # Synchronous — calls IProfileService directly
+│   │           └── DiscardDraftEndpoint.cs          # Synchronous -- calls IProfileService directly
 │   │
 │   ├── Exhibitor.Profiles.Infrastructure/
 │   │   ├── Exhibitor.Profiles.Infrastructure.csproj
-│   │   ├── DependencyInjection.cs                 # AddProfilesInfrastructure() — registers repos
+│   │   ├── DependencyInjection.cs                 # AddProfilesInfrastructure() -- registers repos
 │   │   ├── Interfaces/
 │   │   │   └── IProfileRepository.cs
 │   │   ├── Repositories/
@@ -201,15 +201,15 @@ ExhibitorPlatform.Host
   └── Exhibitor.Common.*
 
 ExhibitorPlatform.Functions
-  ├── Exhibitor.Profiles.Features              ← for DI registration (AddProfilesModule)
-  ├── Exhibitor.Profiles.Infrastructure        ← for DI registration (AddProfilesInfrastructure)
-  ├── Exhibitor.Profiles.PublicApi             ← IProfileModuleApi used in Function classes
+  ├── Exhibitor.Profiles.Features              <- for DI registration (AddProfilesModule)
+  ├── Exhibitor.Profiles.Infrastructure        <- for DI registration (AddProfilesInfrastructure)
+  ├── Exhibitor.Profiles.PublicApi             <- IProfileModuleApi used in Function classes
   └── Exhibitor.Common.*
 
 Exhibitor.Profiles.Features
   ├── Exhibitor.Profiles.Domain
-  ├── Exhibitor.Profiles.Infrastructure        ← for repository interfaces
-  ├── Exhibitor.Profiles.PublicApi             ← implements IProfileModuleApi
+  ├── Exhibitor.Profiles.Infrastructure        <- for repository interfaces
+  ├── Exhibitor.Profiles.PublicApi             <- implements IProfileModuleApi
   └── Exhibitor.Common.Application
 
 Exhibitor.Profiles.Infrastructure
@@ -217,41 +217,49 @@ Exhibitor.Profiles.Infrastructure
   └── Exhibitor.Common.Cosmos
 
 Exhibitor.Profiles.PublicApi
-  └── (no project references — only Ardalis.Result NuGet)
+  └── (no project references -- only Ardalis.Result NuGet)
 
 Exhibitor.Profiles.Domain
-  └── Exhibitor.Common.Application             ← for BaseEntity, PublishableEntity
+  └── Exhibitor.Common.Application             <- for BaseEntity, PublishableEntity
 ```
 
 ### How Requests Flow
 
-**HTTP (CRUD):**
+No CQRS. No mediator. Endpoints and Functions are thin shells that call service classes.
+
+**HTTP (CRUD) -- endpoint calls service directly:**
 ```
-Client → FastEndpoints Endpoint → IProfileService → IProfileRepository → Cosmos DB
+Client -> FastEndpoints Endpoint -> IProfileService -> IProfileRepository -> Cosmos DB
 ```
 
-**Publish (async):**
+**Publish (async) -- Function orchestrates module call + external integration:**
 ```
-Client → PublishProfileEndpoint → Service Bus message → [queue] →
-    PublishProfileFunction → IProfileModuleApi → IProfileService →
-        IProfileRepository → Cosmos DB
-    → Transform → HTTP to external system
+Client -> PublishProfileEndpoint -> Service Bus message -> [queue] ->
+    PublishProfileFunction (orchestrator):
+        1. IProfileModuleApi.PublishAsync() -> IProfileService -> Cosmos DB  [module logic]
+        2. Transform result for external system                              [integration logic]
+        3. HTTP POST to external system                                      [integration logic]
 ```
 
-**Discard Draft (sync):**
+**Discard Draft (sync) -- endpoint calls service directly:**
 ```
-Client → DiscardDraftEndpoint → IProfileService → IProfileRepository → Cosmos DB
+Client -> DiscardDraftEndpoint -> IProfileService -> IProfileRepository -> Cosmos DB
 ```
+
+**Where logic lives:**
+- **Module business logic** (publish, CRUD, validation) -> `IProfileService` inside the module
+- **Integration/orchestration** (transform, send to external) -> in the Function (or extracted to an orchestrator service in the Functions project if complex)
+- **The module never knows about external systems** -- that's the Function's job
 
 ## Planning Documents
 
 | Doc | Status | Description |
 |---|---|---|
-| [00-overview.md](00-overview.md) | ✅ | This document |
-| [01-repo-inventory.md](01-repo-inventory.md) | ✅ | Detailed audit of each source repo |
-| [02-module-mapping.md](02-module-mapping.md) | ✅ | Profiles module structure, endpoint pattern, service layer |
-| [03-integration-points.md](03-integration-points.md) | ✅ | PublicApi interface design & dependency rules |
-| [04-data-migration.md](04-data-migration.md) | 🔲 | Cosmos DB strategy (if any migration needed) |
-| [05-migration-plan.md](05-migration-plan.md) | 🔲 | Phased rollout & task breakdown |
-| [06-background-and-event-driven.md](06-background-and-event-driven.md) | ✅ | Publish workflow — API endpoint + Azure Function |
-| [07-open-questions.md](07-open-questions.md) | ✅ | Decisions resolved, remaining unknowns |
+| [00-overview.md](00-overview.md) | Done | This document |
+| [01-repo-inventory.md](01-repo-inventory.md) | Done | Detailed audit of each source repo |
+| [02-module-mapping.md](02-module-mapping.md) | Done | Profiles module structure, endpoint pattern, service layer |
+| [03-integration-points.md](03-integration-points.md) | Done | PublicApi interface design & dependency rules |
+| [04-data-migration.md](04-data-migration.md) | Done | Cosmos DB strategy -- single database, module-owned containers |
+| [05-migration-plan.md](05-migration-plan.md) | Done | Phased rollout & task breakdown |
+| [06-background-and-event-driven.md](06-background-and-event-driven.md) | Done | Publish workflow -- API endpoint + Azure Function |
+| [07-open-questions.md](07-open-questions.md) | Done | Decisions resolved, remaining unknowns |

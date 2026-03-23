@@ -1,4 +1,4 @@
-# Migration Plan
+﻿# Migration Plan
 
 Phased rollout for consolidating the three exhibitor repos into the modular monolith.
 
@@ -10,10 +10,13 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 
 - [ ] Remove the existing reference monolith demo code (Shipments, Carriers, Stocks modules)
 - [ ] Create `ExhibitorPlatform.Host` ASP.NET Core Web API project
-- [ ] Set up `Program.cs` with Swagger, health checks, exception handling middleware
+- [ ] Add FastEndpoints NuGet package
+- [ ] Set up `Program.cs` with FastEndpoints, Scalar (OpenAPI), health checks, exception handling middleware
+- [ ] Create `ExhibitorPlatform.Functions` Azure Functions (Isolated Worker) project
+- [ ] Set up Functions `Program.cs` with same module DI registration pattern
 - [ ] Copy `Exhibitor.Shared.*` into `Common/` as project references:
-  - `Exhibitor.Common.Application`
-  - `Exhibitor.Common.Cosmos`
+  - `Exhibitor.Common.Application` (includes `BaseEntity`, `PublishableEntity<T>`, `IPublishableService<T,C>`)
+  - `Exhibitor.Common.Cosmos` (includes `CosmosDbDocument`, `PublishableDocument<T>`, `CosmosRepositoryBase`)
   - `Exhibitor.Common.Cosmos.Testing`
 - [ ] Wire up `AddCosmosDbClient()` in `Program.cs` with container definitions
 - [ ] Add `docker-compose.yml` for Cosmos DB emulator (or keep using local emulator)
@@ -37,18 +40,23 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Create `Exhibitor.Profiles.Infrastructure` project
 - [ ] Move repository interface(s) from `Application/Interfaces/`
 - [ ] Move Cosmos repository implementation(s) from `Infrastructure/`
-- [ ] Create `DependencyInjection.cs` → `AddProfilesInfrastructure()`
+- [ ] Create `DependencyInjection.cs` -> `AddProfilesInfrastructure()`
 
 ### 1c. Features Layer
 - [ ] Create `Exhibitor.Profiles.Features` project
-- [ ] Create `DependencyInjection.cs` → `AddProfilesModule()`
+- [ ] Create `DependencyInjection.cs` -> `AddProfilesModule()`
+- [ ] Create service layer:
+  - [ ] `Services/IProfileService.cs` -- internal service interface (CRUD + publish + discard)
+  - [ ] `Services/ProfileService.cs` -- business logic (migrated from `Application/Services/`)
+  - [ ] `Services/ProfileModuleApi.cs` -- implements `IProfileModuleApi`, delegates to `IProfileService`
 - [ ] Migrate each feature from `Application/Features/Profile/` as a vertical slice:
-  - [ ] `CreateProfile/` — endpoint, command, handler, validator, mapping
-  - [ ] `GetProfile/` — endpoint, query, handler, mapping
-  - [ ] `UpdateProfile/` — endpoint, command, handler, validator, mapping
-  - [ ] `DeleteProfile/` — endpoint, command, handler
-  - [ ] `ListProfiles/` — endpoint, query, handler, mapping
-- [ ] Convert Azure Function HTTP triggers → Minimal API endpoints
+  - [ ] `CreateProfile/` -- FastEndpoints endpoint, request, response, validator, mapping
+  - [ ] `GetProfile/` -- endpoint, response, mapping
+  - [ ] `UpdateProfile/` -- endpoint, request, validator, mapping
+  - [ ] `DeleteProfile/` -- endpoint
+  - [ ] `ListProfiles/` -- endpoint, response, mapping
+  - [ ] `PublishProfile/` -- endpoint (sends Service Bus message, returns 202)
+  - [ ] `DiscardDraft/` -- endpoint (synchronous, calls `IProfileService` directly)
 
 ### 1d. PublicApi Layer
 - [ ] Create `Exhibitor.Profiles.PublicApi` project
@@ -56,8 +64,8 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Add contract DTOs in `Contracts/`
 
 ### 1e. Tests
-- [ ] Migrate unit tests → `tests/Exhibitor.Profiles.Tests.Unit/`
-- [ ] Migrate integration tests → `tests/Exhibitor.Profiles.Tests.Integration/`
+- [ ] Migrate unit tests -> `tests/Exhibitor.Profiles.Tests.Unit/`
+- [ ] Migrate integration tests -> `tests/Exhibitor.Profiles.Tests.Integration/`
 - [ ] Update test fixture to use shared `CosmosDbFixture`
 
 ### 1f. Verify
@@ -82,17 +90,19 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Move repository interfaces
 - [ ] Move Cosmos repository implementations
 - [ ] Wire up `Platform.Shared.FileStorage` for media uploads
-- [ ] Create `DependencyInjection.cs` → `AddBrandsInfrastructure()`
+- [ ] Create `DependencyInjection.cs` -> `AddBrandsInfrastructure()`
 
 ### 2c. Features Layer
 - [ ] Create `Exhibitor.Brands.Features` project
-- [ ] Create `DependencyInjection.cs` → `AddBrandsModule()`
+- [ ] Create `DependencyInjection.cs` -> `AddBrandsModule()`
 - [ ] Migrate each feature as a vertical slice:
   - [ ] Brand CRUD (Create, Get, Update, Delete, List)
   - [ ] ExhibitorBrand CRUD
   - [ ] BrandRequest workflow (Submit, Approve, Reject, Get)
   - [ ] File upload (UploadBrandMedia)
-- [ ] Convert Azure Function HTTP triggers → Minimal API endpoints
+- [ ] Create service layer (`IBrandService`, `BrandService`, `BrandModuleApi`)
+- [ ] Add `PublishBrand/` and `DiscardDraft/` features
+- [ ] Add `PublishBrandFunction` to `ExhibitorPlatform.Functions`
 
 ### 2d. PublicApi Layer
 - [ ] Create `Exhibitor.Brands.PublicApi` project
@@ -100,8 +110,8 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 - [ ] Add contract DTOs in `Contracts/`
 
 ### 2e. Tests
-- [ ] Migrate unit tests → `tests/Exhibitor.Brands.Tests.Unit/`
-- [ ] Migrate integration tests → `tests/Exhibitor.Brands.Tests.Integration/`
+- [ ] Migrate unit tests -> `tests/Exhibitor.Brands.Tests.Unit/`
+- [ ] Migrate integration tests -> `tests/Exhibitor.Brands.Tests.Integration/`
 
 ### 2f. Verify
 - [ ] All brand endpoints working via Swagger
@@ -138,9 +148,9 @@ Phased rollout for consolidating the three exhibitor repos into the modular mono
 
 | Phase | Scope | Estimate |
 |---|---|---|
-| Phase 0 | Shell setup | 1–2 days |
-| Phase 1 | Profiles module | 3–5 days |
-| Phase 2 | Brands module | 5–7 days (more models, file upload) |
-| Phase 3 | Cross-module wiring | 1–2 days |
-| Phase 4 | CI/CD & deployment | 2–3 days |
-| **Total** | | **~12–19 days** |
+| Phase 0 | Shell setup | 1--2 days |
+| Phase 1 | Profiles module | 3--5 days |
+| Phase 2 | Brands module | 5--7 days (more models, file upload) |
+| Phase 3 | Cross-module wiring | 1--2 days |
+| Phase 4 | CI/CD & deployment | 2--3 days |
+| **Total** | | **~12--19 days** |

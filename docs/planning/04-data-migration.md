@@ -1,4 +1,4 @@
-# Data Migration
+﻿# Data Migration
 
 Cosmos DB strategy for the modular monolith.
 
@@ -17,58 +17,24 @@ Both use the Cosmos DB emulator locally and Azure Cosmos DB in deployed environm
 
 ---
 
-## Strategy Options
+## Strategy
 
-### Option A: Single Shared Database, Module-Owned Containers ✅ Recommended
+Single database (`ExhibitorPlatformDb`) with module-owned containers. This aligns with the modular monolith philosophy: shared infrastructure, isolated business logic. Each module's Infrastructure project resolves `CosmosClient` and accesses only its own containers.
 
+**Phase 1 (Profiles only):**
 ```
 Database: ExhibitorPlatformDb
-  ├── profiles            (owned by Profiles module)
-  ├── brands              (owned by Brands module)
-  ├── exhibitorBrands     (owned by Brands module)
-  └── brandRequests       (owned by Brands module)
+  └── profiles            (owned by Profiles module, partition key: /exhibitorId)
 ```
 
-**Pros:**
-- Single `CosmosClient` instance, single connection pool
-- Simpler configuration (one connection string)
-- Each module still owns its own containers — clean boundaries
-- Matches the "shared database, separate tables" pattern from the reference monolith (which uses PostgreSQL with per-module DbContexts)
-
-**Cons:**
-- Modules share throughput at the database level (mitigated by per-container throughput provisioning)
-- Harder to split back into microservices later (but that's the point of consolidating)
-
-### Option B: Separate Databases per Module
-
+**Phase 2 (adds Brands):**
 ```
-Database: ExhibitorProfilesDb
-  └── profiles
-
-Database: ExhibitorBrandsDb
-  ├── brands
-  ├── exhibitorBrands
-  └── brandRequests
+Database: ExhibitorPlatformDb
+  ├── profiles            (owned by Profiles module, partition key: /exhibitorId)
+  ├── brands              (owned by Brands module, partition key: /externalBrandId)
+  ├── exhibitorBrands     (owned by Brands module, partition key: /exhibitorId)
+  └── brandRequests       (owned by Brands module, partition key: /exhibitorId)
 ```
-
-**Pros:**
-- Maximum isolation
-- Easy to split back out
-
-**Cons:**
-- Multiple `CosmosClient` instances or complex routing
-- More configuration, more connection overhead
-- Over-engineering for a monolith
-
-### Option C: Single Container with Discriminator
-
-Not recommended — forces all entities into one container, complicates queries, loses partition key optimization.
-
----
-
-## Recommendation: Option A
-
-Use a single database (`ExhibitorPlatformDb`) with module-owned containers. This aligns with the modular monolith philosophy: shared infrastructure, isolated business logic.
 
 ---
 
@@ -77,26 +43,21 @@ Use a single database (`ExhibitorPlatformDb`) with module-owned containers. This
 The shared `CosmosClient` is registered once in the Host via `Exhibitor.Common.Cosmos`:
 
 ```csharp
-// Program.cs
+// Program.cs (Phase 1 -- Profiles only)
 builder.Services.AddCosmosDbClient(builder.Configuration, containers:
 [
-    // Profiles module
     new ContainerDefinition("profiles", "/exhibitorId"),
-    // Brands module
-    new ContainerDefinition("brands", "/externalBrandId"),
-    new ContainerDefinition("exhibitorBrands", "/exhibitorId"),
-    new ContainerDefinition("brandRequests", "/exhibitorId"),
 ]);
 ```
 
-Each module's Infrastructure project resolves `CosmosClient` and accesses only its own containers.
+Phase 2 adds the Brands containers to this same registration.
 
 ---
 
 ## Migration Path
 
 ### For Local Development
-No migration needed — the Cosmos DB emulator starts fresh. Container definitions in `Program.cs` handle creation.
+No migration needed -- the Cosmos DB emulator starts fresh. Container definitions in `Program.cs` handle creation.
 
 ### For Deployed Environments
 
@@ -110,7 +71,7 @@ No migration needed — the Cosmos DB emulator starts fresh. Container definitio
 
 ### Data Compatibility
 
-The document schema stays the same — `CosmosDbDocument` base class (Id, PartitionKey, audit fields) is unchanged. No document-level migration needed; it's just moving documents between databases/containers.
+The document schema stays the same -- `CosmosDbDocument` base class (Id, PartitionKey, audit fields) is unchanged. No document-level migration needed; it's just moving documents between databases/containers.
 
 ---
 

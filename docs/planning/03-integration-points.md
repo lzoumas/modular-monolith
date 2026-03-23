@@ -32,25 +32,26 @@ The implementation (`ProfileModuleApi`) lives in `Exhibitor.Profiles.Features/Se
 
 ```
 ExhibitorPlatform.Host
-  ??? Exhibitor.Profiles.Features
-  ??? Exhibitor.Profiles.Infrastructure
-  ??? Exhibitor.Common.*
-  ??? Platform.Shared.* (external, if needed)
+  |-- Exhibitor.Profiles.Features
+  |-- Exhibitor.Profiles.Infrastructure
+  |-- Exhibitor.Common.*
+  +-- Platform.Shared.* (external, if needed)
 
 ExhibitorPlatform.Functions
-  ??? Exhibitor.Profiles.PublicApi              ? uses IProfileModuleApi in Function classes
-  ??? Exhibitor.Profiles.Features              ? for DI registration (AddProfilesModule)
-  ??? Exhibitor.Profiles.Infrastructure        ? for DI registration (AddProfilesInfrastructure)
-  ??? Exhibitor.Common.*
+  |-- Exhibitor.Profiles.PublicApi              <- uses IProfileModuleApi in Function classes
+  |-- Exhibitor.Profiles.Features              <- for DI registration (AddProfilesModule)
+  |-- Exhibitor.Profiles.Infrastructure        <- for DI registration (AddProfilesInfrastructure)
+  +-- Exhibitor.Common.*
 
 Exhibitor.Profiles.Features
-  ??? Exhibitor.Profiles.Domain
-  ??? Exhibitor.Profiles.Infrastructure
-  ??? Exhibitor.Common.Application
+  |-- Exhibitor.Profiles.Domain
+  |-- Exhibitor.Profiles.Infrastructure
+  |-- Exhibitor.Profiles.PublicApi             <- implements IProfileModuleApi
+  +-- Exhibitor.Common.Application
 
 Exhibitor.Profiles.Infrastructure
-  ??? Exhibitor.Profiles.Domain
-  ??? Exhibitor.Common.Cosmos
+  |-- Exhibitor.Profiles.Domain
+  +-- Exhibitor.Common.Cosmos
 ```
 
 > **Rule:** Function classes only interact with modules through **PublicApi interfaces**. The Features/Infrastructure references are only for DI registration (`AddProfilesModule()`).
@@ -73,6 +74,6 @@ The Profiles module never references Brands directly. Cross-module dependencies 
 
 ## Related Documents
 
-- [00-overview.md](00-overview.md) — Architecture overview
-- [02-module-mapping.md](02-module-mapping.md) — Module structure & service layer
-- [06-background-and-event-driven.md](06-background-and-event-driven.md) — Publish workflow
+- [00-overview.md](00-overview.md) -- Architecture overview
+- [02-module-mapping.md](02-module-mapping.md) -- Module structure & service layer
+- [06-background-and-event-driven.md](06-background-and-event-driven.md) -- Publish workflow
