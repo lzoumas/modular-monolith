@@ -38,17 +38,15 @@ Phase 1 builds the full architecture with the **Profiles module** — API endpoi
 | **Event-driven** | Service Bus triggers in Function App | Separate Azure Functions project, shares module code via project refs |
 | **Cross-module calls** | HTTP calls between Function apps | In-process via `PublicApi` interfaces (no network hop) |
 
-## Target Solution Structure (draft)
+## Target Solution Structure
 
 ### Solution Explorer View
 
-The solution uses a **`Modules` solution folder** (virtual grouping in Visual Studio) to organize all module and common projects — matching the reference monolith pattern used by Shipments, Carriers, and Stocks.
-
 ```
 Solution 'ExhibitorPlatform'
-├── ExhibitorPlatform.Host                     # ASP.NET Core host — Program.cs, DI, config
-├── ExhibitorPlatform.Functions                # Azure Functions (Isolated Worker) — Service Bus triggers
-├── Modules (solution folder)                  # Virtual grouping — not a physical directory
+├── ExhibitorPlatform.Host                     # ASP.NET Core Web API
+├── ExhibitorPlatform.Functions                # Azure Functions (Isolated Worker)
+├── Modules (solution folder)
 │   ├── Profiles (solution folder)
 │   │   ├── Exhibitor.Profiles.Domain
 │   │   ├── Exhibitor.Profiles.Features
@@ -63,33 +61,187 @@ Solution 'ExhibitorPlatform'
     └── Exhibitor.Profiles.Tests.Integration
 ```
 
-> **Phase 2** adds `Brands` as a sibling solution folder under `Modules`, following the identical pattern.
+> **Phase 2** adds `Brands` as a sibling solution folder under `Modules`.
 
-### Disk Layout
-
-On disk, module folders live at the repo root — the `Modules` grouping is solution-level only.
+### Full Disk Layout
 
 ```
 repo-root/
-  ExhibitorPlatform.Host/
-  ExhibitorPlatform.Functions/
-  Profiles/
-    Exhibitor.Profiles.Domain/
-    Exhibitor.Profiles.Features/
-    Exhibitor.Profiles.Infrastructure/
-    Exhibitor.Profiles.PublicApi/
-  Common/
-    Exhibitor.Common.Application/
-    Exhibitor.Common.Cosmos/
-    Exhibitor.Common.Cosmos.Testing/
-  tests/
-    Exhibitor.Profiles.Tests.Unit/
-    Exhibitor.Profiles.Tests.Integration/
-  docs/
-  ExhibitorPlatform.sln
+│
+├── ExhibitorPlatform.Host/
+│   ├── Program.cs                                 # DI wiring, middleware, Cosmos, health checks
+│   ├── ExhibitorPlatform.Host.csproj
+│   ├── appsettings.json
+│   ├── appsettings.Development.json
+│   └── appsettings.{env}.json                     # dev, qa, uat, prod
+│
+├── ExhibitorPlatform.Functions/
+│   ├── Program.cs                                 # DI wiring — registers same modules as Host
+│   ├── ExhibitorPlatform.Functions.csproj
+│   ├── host.json
+│   ├── appsettings.json
+│   └── Functions/
+│       └── Profiles/
+│           └── PublishProfileFunction.cs           # ServiceBusTrigger → publish → transform → send
+│
+├── Profiles/
+│   ├── Exhibitor.Profiles.Domain/
+│   │   ├── Exhibitor.Profiles.Domain.csproj
+│   │   ├── Entities/
+│   │   │   ├── Profile.cs                         # Inherits PublishableEntity<ProfileContent>
+│   │   │   └── ProfileContent.cs                  # Draft/published content model
+│   │   ├── ValueObjects/
+│   │   │   ├── ShowroomContact.cs
+│   │   │   ├── CompanyContact.cs
+│   │   │   ├── SocialMediaLinks.cs
+│   │   │   └── ShowroomPreferences.cs
+│   │   └── Enums/
+│   │
+│   ├── Exhibitor.Profiles.Features/
+│   │   ├── Exhibitor.Profiles.Features.csproj
+│   │   ├── DependencyInjection.cs                 # AddProfilesModule() — registers services, validators
+│   │   ├── Services/
+│   │   │   ├── IProfileService.cs                 # Internal: CRUD + publish + discard
+│   │   │   ├── ProfileService.cs                  # Business logic implementation
+│   │   │   └── ProfileModuleApi.cs                # Implements IProfileModuleApi → delegates to IProfileService
+│   │   └── Features/
+│   │       ├── CreateProfile/
+│   │       │   ├── CreateProfileEndpoint.cs        # FastEndpoints endpoint
+│   │       │   ├── CreateProfileRequest.cs
+│   │       │   ├── CreateProfileResponse.cs
+│   │       │   ├── CreateProfileValidator.cs       # FluentValidation
+│   │       │   └── CreateProfileMapping.cs         # Request ↔ Domain mapping
+│   │       ├── GetProfile/
+│   │       │   ├── GetProfileEndpoint.cs
+│   │       │   ├── GetProfileResponse.cs
+│   │       │   └── GetProfileMapping.cs
+│   │       ├── UpdateProfile/
+│   │       │   ├── UpdateProfileEndpoint.cs
+│   │       │   ├── UpdateProfileRequest.cs
+│   │       │   ├── UpdateProfileValidator.cs
+│   │       │   └── UpdateProfileMapping.cs
+│   │       ├── DeleteProfile/
+│   │       │   └── DeleteProfileEndpoint.cs
+│   │       ├── ListProfiles/
+│   │       │   ├── ListProfilesEndpoint.cs
+│   │       │   ├── ListProfilesResponse.cs
+│   │       │   └── ListProfilesMapping.cs
+│   │       ├── PublishProfile/
+│   │       │   └── PublishProfileEndpoint.cs       # Sends SB message, returns 202
+│   │       └── DiscardDraft/
+│   │           └── DiscardDraftEndpoint.cs          # Synchronous — calls IProfileService directly
+│   │
+│   ├── Exhibitor.Profiles.Infrastructure/
+│   │   ├── Exhibitor.Profiles.Infrastructure.csproj
+│   │   ├── DependencyInjection.cs                 # AddProfilesInfrastructure() — registers repos
+│   │   ├── Interfaces/
+│   │   │   └── IProfileRepository.cs
+│   │   ├── Repositories/
+│   │   │   └── ProfileRepository.cs               # Cosmos DB repository
+│   │   └── Documents/
+│   │       └── ProfileDocument.cs                 # Inherits PublishableDocument<ProfileContentDocument>
+│   │
+│   └── Exhibitor.Profiles.PublicApi/
+│       ├── Exhibitor.Profiles.PublicApi.csproj
+│       ├── IProfileModuleApi.cs                   # PublishAsync, GetPublishedAsync
+│       ├── Contracts/
+│       │   └── PublishedProfile.cs                # Published snapshot DTOs
+│       └── Messages/
+│           └── PublishProfileMessage.cs           # Service Bus message contract
+│
+├── Common/
+│   ├── Exhibitor.Common.Application/
+│   │   ├── Exhibitor.Common.Application.csproj
+│   │   ├── Models/
+│   │   │   ├── BaseEntity.cs                      # Id, audit fields, soft delete
+│   │   │   └── PublishableEntity.cs               # Abstract: Draft<T>, Published<T>, PublishedOn/By
+│   │   └── Interfaces/
+│   │       └── IPublishableService.cs             # PublishAsync, DiscardDraftAsync
+│   │
+│   ├── Exhibitor.Common.Cosmos/
+│   │   ├── Exhibitor.Common.Cosmos.csproj
+│   │   ├── Configuration/
+│   │   │   └── CosmosDbConfig.cs
+│   │   ├── Documents/
+│   │   │   ├── CosmosDbDocument.cs
+│   │   │   └── PublishableDocument.cs             # Abstract: Draft<T>, Published<T> for Cosmos docs
+│   │   ├── Extensions/
+│   │   │   └── CosmosDbServiceExtensions.cs       # AddCosmosDbClient() DI extension
+│   │   ├── HealthChecks/
+│   │   │   └── CosmosDbHealthCheck.cs
+│   │   └── Repositories/
+│   │       └── CosmosRepositoryBase.cs
+│   │
+│   └── Exhibitor.Common.Cosmos.Testing/
+│       ├── Exhibitor.Common.Cosmos.Testing.csproj
+│       ├── ContainerDefinition.cs
+│       ├── CosmosDbFixture.cs
+│       └── CosmosDbFixtureOptions.cs
+│
+├── tests/
+│   ├── Exhibitor.Profiles.Tests.Unit/
+│   │   └── Exhibitor.Profiles.Tests.Unit.csproj
+│   └── Exhibitor.Profiles.Tests.Integration/
+│       └── Exhibitor.Profiles.Tests.Integration.csproj
+│
+├── docs/
+│   └── planning/
+│       ├── 00-overview.md
+│       └── ...
+│
+└── ExhibitorPlatform.sln
 ```
 
-> **Why this separation matters:** Solution folders are a Visual Studio organizational feature (`.sln` metadata). They don't create physical directories. This matches how the reference monolith groups Carriers, Shipments, Stocks, and Common under a `Modules` solution folder while keeping `Carriers/`, `Stocks/`, etc. at the repo root on disk.
+### Project References
+
+```
+ExhibitorPlatform.Host
+  ├── Exhibitor.Profiles.Features
+  ├── Exhibitor.Profiles.Infrastructure
+  └── Exhibitor.Common.*
+
+ExhibitorPlatform.Functions
+  ├── Exhibitor.Profiles.Features              ← for DI registration (AddProfilesModule)
+  ├── Exhibitor.Profiles.Infrastructure        ← for DI registration (AddProfilesInfrastructure)
+  ├── Exhibitor.Profiles.PublicApi             ← IProfileModuleApi used in Function classes
+  └── Exhibitor.Common.*
+
+Exhibitor.Profiles.Features
+  ├── Exhibitor.Profiles.Domain
+  ├── Exhibitor.Profiles.Infrastructure        ← for repository interfaces
+  ├── Exhibitor.Profiles.PublicApi             ← implements IProfileModuleApi
+  └── Exhibitor.Common.Application
+
+Exhibitor.Profiles.Infrastructure
+  ├── Exhibitor.Profiles.Domain
+  └── Exhibitor.Common.Cosmos
+
+Exhibitor.Profiles.PublicApi
+  └── (no project references — only Ardalis.Result NuGet)
+
+Exhibitor.Profiles.Domain
+  └── Exhibitor.Common.Application             ← for BaseEntity, PublishableEntity
+```
+
+### How Requests Flow
+
+**HTTP (CRUD):**
+```
+Client → FastEndpoints Endpoint → IProfileService → IProfileRepository → Cosmos DB
+```
+
+**Publish (async):**
+```
+Client → PublishProfileEndpoint → Service Bus message → [queue] →
+    PublishProfileFunction → IProfileModuleApi → IProfileService →
+        IProfileRepository → Cosmos DB
+    → Transform → HTTP to external system
+```
+
+**Discard Draft (sync):**
+```
+Client → DiscardDraftEndpoint → IProfileService → IProfileRepository → Cosmos DB
+```
 
 ## Planning Documents
 
