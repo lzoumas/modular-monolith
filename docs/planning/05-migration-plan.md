@@ -69,8 +69,8 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Wire up Service Bus connection in Functions config
 
 ### 1f. Tests
-- [ ] Create unit tests in `tests/Exhibitor.Profiles.Tests.Unit/`
-- [ ] Create integration tests in `tests/Exhibitor.Profiles.Tests.Integration/`
+- [ ] Create unit tests in `Profiles/Exhibitor.Profiles.Tests.Unit/`
+- [ ] Create integration tests in `Profiles/Exhibitor.Profiles.Tests.Integration/`
 - [ ] Set up `CosmosDbFixture` for integration tests
 
 ### 1g. Verify
@@ -115,8 +115,8 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Add contract DTOs in `Contracts/`
 
 ### 2e. Tests
-- [ ] Create unit tests in `tests/Exhibitor.Brands.Tests.Unit/`
-- [ ] Create integration tests in `tests/Exhibitor.Brands.Tests.Integration/`
+- [ ] Create unit tests in `Brands/Exhibitor.Brands.Tests.Unit/`
+- [ ] Create integration tests in `Brands/Exhibitor.Brands.Tests.Integration/`
 
 ### 2f. Verify
 - [ ] All brand endpoints working via Scalar UI

@@ -56,7 +56,11 @@ Solution 'ExhibitorPlatform'
 │       ├── Exhibitor.Common.Application
 │       ├── Exhibitor.Common.Cosmos
 │       └── Exhibitor.Common.Cosmos.Testing
-└── Tests (solution folder)
+└── Profiles (solution folder)
+    ├── Exhibitor.Profiles.Domain
+    ├── Exhibitor.Profiles.Features
+    ├── Exhibitor.Profiles.Infrastructure
+    ├── Exhibitor.Profiles.PublicApi
     ├── Exhibitor.Profiles.Tests.Unit
     └── Exhibitor.Profiles.Tests.Integration
 ```
@@ -141,13 +145,19 @@ repo-root/
 │   │   └── Documents/
 │   │       └── ProfileDocument.cs                 # Inherits PublishableDocument<ProfileContentDocument>
 │   │
-│   └── Exhibitor.Profiles.PublicApi/
-│       ├── Exhibitor.Profiles.PublicApi.csproj
-│       ├── IProfileModuleApi.cs                   # PublishAsync, GetPublishedAsync
-│       ├── Contracts/
-│       │   └── PublishedProfile.cs                # Published snapshot DTOs
-│       └── Messages/
-│           └── PublishProfileMessage.cs           # Service Bus message contract
+│   ├── Exhibitor.Profiles.PublicApi/
+│   │   ├── Exhibitor.Profiles.PublicApi.csproj
+│   │   ├── IProfileModuleApi.cs                   # PublishAsync, GetPublishedAsync
+│   │   ├── Contracts/
+│   │   │   └── PublishedProfile.cs                # Published snapshot DTOs
+│   │   └── Messages/
+│   │       └── PublishProfileMessage.cs           # Service Bus message contract
+│   │
+│   ├── Exhibitor.Profiles.Tests.Unit/
+│   │   └── Exhibitor.Profiles.Tests.Unit.csproj
+│   │
+│   └── Exhibitor.Profiles.Tests.Integration/
+│       └── Exhibitor.Profiles.Tests.Integration.csproj
 │
 ├── Common/
 │   ├── Exhibitor.Common.Application/
@@ -177,12 +187,6 @@ repo-root/
 │       ├── ContainerDefinition.cs
 │       ├── CosmosDbFixture.cs
 │       └── CosmosDbFixtureOptions.cs
-│
-├── tests/
-│   ├── Exhibitor.Profiles.Tests.Unit/
-│   │   └── Exhibitor.Profiles.Tests.Unit.csproj
-│   └── Exhibitor.Profiles.Tests.Integration/
-│       └── Exhibitor.Profiles.Tests.Integration.csproj
 │
 ├── docs/
 │   └── planning/
