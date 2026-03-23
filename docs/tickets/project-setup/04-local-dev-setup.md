@@ -8,7 +8,7 @@ assignees: ''
 
 ## Summary
 
-Set up Docker Compose for the Cosmos DB emulator, configure app settings for local development, and verify the Host project starts and connects to the local emulator.
+Set up Docker Compose for the Cosmos DB emulator, configure app settings for local development, and verify the WebApi project starts and connects to the local emulator.
 
 ## Background / Context
 
@@ -51,7 +51,7 @@ The existing demo used PostgreSQL via Docker. The exhibitor platform uses Cosmos
 - [ ] `docker-compose up -d` starts the Cosmos DB emulator
 - [ ] WebApi project connects to the emulator
 - [ ] `/health` endpoint returns healthy (Cosmos DB check passes)
-- [ ] Developer can clone the repo, run docker-compose, and start the host without manual Cosmos setup
+- [ ] Developer can clone the repo, run docker-compose, and start the WebApi without manual Cosmos setup
 
 ## Files to Modify
 

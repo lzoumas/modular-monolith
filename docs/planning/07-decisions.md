@@ -29,7 +29,7 @@ A separate `ExhibitorPlatform.Functions` project handles Service Bus triggers. I
 ### 5. Cosmos DB - New database, no migration needed
 **Status:** DECIDED
 
-Greenfield -- no production data exists. New `ExhibitorPlatformDb` database with module-owned containers. Cosmos DB emulator for local dev. See [04-data-migration](04-data-migration.md).
+See [04-cosmos-setup](04-cosmos-setup.md).
 
 ### 6. Swagger / OpenAPI - Scalar
 **Status:** DECIDED

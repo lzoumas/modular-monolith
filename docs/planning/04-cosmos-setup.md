@@ -27,7 +27,7 @@ Database: ExhibitorPlatformDb
 
 ## Cosmos Client Setup
 
-The shared `CosmosClient` is registered once in the Host via `Exhibitor.Common.Cosmos`:
+The shared `CosmosClient` is registered once in the WebApi via `Exhibitor.Common.Cosmos`:
 
 ```csharp
 // Program.cs (Phase 1 -- Profiles only)

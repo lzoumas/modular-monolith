@@ -38,7 +38,7 @@ The service layer replaces the CQRS command/query handlers from the existing mic
 ## Implementation Tasks
 
 ### Project Setup
-- [ ] Create `Profiles/Exhibitor.Profiles.Features/Exhibitor.Profiles.Features.csproj`:
+- [ ] Create `Modules/Profiles/Exhibitor.Profiles.Features/Exhibitor.Profiles.Features.csproj`:
   - Target `net9.0`
   - Reference `Exhibitor.Profiles.Domain`
   - Reference `Exhibitor.Profiles.Infrastructure`
@@ -103,11 +103,11 @@ The service layer replaces the CQRS command/query handlers from the existing mic
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Features/Exhibitor.Profiles.Features.csproj` | Add |
-| `Profiles/Exhibitor.Profiles.Features/Services/IProfileService.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Features/Services/ProfileService.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Features/Services/ProfileModuleApi.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Features/DependencyInjection.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Exhibitor.Profiles.Features.csproj` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Services/IProfileService.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Services/ProfileService.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Services/ProfileModuleApi.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/DependencyInjection.cs` | Add |
 | `ExhibitorPlatform.WebApi/Program.cs` | Update |
 | `ExhibitorPlatform.WebApi/ExhibitorPlatform.WebApi.csproj` | Update (add project refs) |
 | `ExhibitorPlatform.sln` | Update |

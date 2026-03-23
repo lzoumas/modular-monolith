@@ -13,7 +13,7 @@ Create the five CRUD FastEndpoints for the Profiles module: Create, Get, Update,
 ## Prerequisites
 
 - profiles-module/04-profiles-service-layer -- `IProfileService` must be registered
-- project-setup/02-host-project -- FastEndpoints must be configured
+- project-setup/02-webapi-project -- FastEndpoints must be configured
 
 ## Background / Context
 
@@ -90,27 +90,27 @@ These endpoints replace the Azure Function HTTP triggers from the existing profi
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Features/Features/CreateProfile/*.cs` | Add (5 files) |
-| `Profiles/Exhibitor.Profiles.Features/Features/GetProfile/*.cs` | Add (3 files) |
-| `Profiles/Exhibitor.Profiles.Features/Features/UpdateProfile/*.cs` | Add (4 files) |
-| `Profiles/Exhibitor.Profiles.Features/Features/DeleteProfile/*.cs` | Add (1 file) |
-| `Profiles/Exhibitor.Profiles.Features/Features/ListProfiles/*.cs` | Add (3 files) |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/CreateProfile/*.cs` | Add (5 files) |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/GetProfile/*.cs` | Add (3 files) |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/UpdateProfile/*.cs` | Add (4 files) |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/DeleteProfile/*.cs` | Add (1 file) |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/ListProfiles/*.cs` | Add (3 files) |
 
 ## Out of Scope
 
 - Publish endpoint (see publish-workflow/02-publish-profile-workflow)
 - Discard draft endpoint (see publish-workflow/03-discard-draft-endpoint)
-- Authentication/authorization (handled by `Platform.Shared.ManagedIdentity` middleware -- configured in project-setup/02-host-project)
+configured in project-setup/02-webapi-project)
 
 ## Technical Notes
 
-- FastEndpoints auto-discovers endpoint classes from referenced assemblies. The Host project reference to `Exhibitor.Profiles.Features` is sufficient -- no manual registration needed.
+- FastEndpoints auto-discovers endpoint classes from referenced assemblies. The WebApi project reference to `Exhibitor.Profiles.Features` is sufficient -- no manual registration needed.
 - Use `Route<string>("exhibitorId")` and `Route<string>("profileId")` for path parameter binding.
 - Mapping extension methods keep endpoint classes thin -- no inline mapping logic.
 
 ## Verification Steps
 
-1. Start the Host project
+1. Start the WebApi project
 2. Open Scalar UI at `/swagger`
 3. Test each endpoint:
    - Create a profile -> 201 with Location header

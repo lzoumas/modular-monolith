@@ -31,7 +31,7 @@ The domain layer contains the core business objects with no framework dependenci
 
 ## Implementation Tasks
 
-- [ ] Create `Profiles/Exhibitor.Profiles.Domain/Exhibitor.Profiles.Domain.csproj`:
+- [ ] Create `Modules/Profiles/Exhibitor.Profiles.Domain/Exhibitor.Profiles.Domain.csproj`:
   - Target `net9.0`
   - Reference `Exhibitor.Common.Application`
   - No NuGet packages (pure domain -- no framework dependencies)
@@ -62,11 +62,11 @@ The domain layer contains the core business objects with no framework dependenci
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Domain/Exhibitor.Profiles.Domain.csproj` | Add |
-| `Profiles/Exhibitor.Profiles.Domain/Entities/Profile.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Domain/Entities/ProfileContent.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Domain/ValueObjects/*.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Domain/Enums/` | Add (if any) |
+| `Modules/Profiles/Exhibitor.Profiles.Domain/Exhibitor.Profiles.Domain.csproj` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Domain/Entities/Profile.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Domain/Entities/ProfileContent.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Domain/ValueObjects/*.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Domain/Enums/` | Add (if any) |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations

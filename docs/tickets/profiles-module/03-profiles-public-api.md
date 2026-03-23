@@ -28,7 +28,7 @@ The PublicApi project defines the cross-boundary contract for the Profiles modul
 
 ## Implementation Tasks
 
-- [ ] Create `Profiles/Exhibitor.Profiles.PublicApi/Exhibitor.Profiles.PublicApi.csproj`:
+- [ ] Create `Modules/Profiles/Exhibitor.Profiles.PublicApi/Exhibitor.Profiles.PublicApi.csproj`:
   - Target `net9.0`
   - Add `Ardalis.Result` NuGet package
   - No project references
@@ -53,16 +53,16 @@ The PublicApi project defines the cross-boundary contract for the Profiles modul
 - [ ] `PublishProfileMessage` has all fields needed for the publish workflow
 - [ ] `PublishedProfile` is a lightweight DTO -- not the full domain entity
 - [ ] No project references in `.csproj` -- only `Ardalis.Result`
-- [ ] Both the Host and Functions projects can reference this project
+- [ ] Both the WebApi and Functions projects can reference this project
 
 ## Files to Modify
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.PublicApi/Exhibitor.Profiles.PublicApi.csproj` | Add |
-| `Profiles/Exhibitor.Profiles.PublicApi/IProfileModuleApi.cs` | Add |
-| `Profiles/Exhibitor.Profiles.PublicApi/Contracts/PublishedProfile.cs` | Add |
-| `Profiles/Exhibitor.Profiles.PublicApi/Messages/PublishProfileMessage.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.PublicApi/Exhibitor.Profiles.PublicApi.csproj` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.PublicApi/IProfileModuleApi.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.PublicApi/Contracts/PublishedProfile.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.PublicApi/Messages/PublishProfileMessage.cs` | Add |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations

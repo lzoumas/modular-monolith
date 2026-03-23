@@ -29,7 +29,7 @@ Tickets reference each other as `folder/filename` (e.g. `profiles-module/04-prof
 | # | Ticket | Type | Blocked By | Status |
 |---|---|---|---|---|
 | 01 | [Remove demo monolith code](project-setup/01-remove-demo-code.md) | Tech | -- | TODO |
-| 02 | [Create Host project](project-setup/02-host-project.md) | Tech | 01 | TODO |
+| 02 | [Create WebApi project](project-setup/02-webapi-project.md) | Tech | 01 | TODO |
 | 03 | [Create Common shared libraries](project-setup/03-common-projects.md) | Tech | 01 | TODO |
 | 04 | [Local development environment](project-setup/04-local-dev-setup.md) | Tech | 02, 03 | TODO |
 
@@ -74,7 +74,7 @@ Tickets reference each other as `folder/filename` (e.g. `profiles-module/04-prof
 
 ```
 project-setup/01 (Remove demo)
-  |-- project-setup/02 (Host) ----+-- project-setup/04 (Local dev)
+  |-- project-setup/02 (WebApi) ----+-- project-setup/04 (Local dev)
   |                                |
   +-- project-setup/03 (Common) --+
   |
@@ -123,8 +123,5 @@ The epics are sequential but stories within each epic can be parallelized where 
 
 - [00-overview.md](../planning/00-overview.md) -- Architecture overview
 - [02-module-mapping.md](../planning/02-module-mapping.md) -- Module structure
-- [05-migration-plan.md](../planning/05-migration-plan.md) -- Phased build plan
-- [06-background-and-event-driven.md](../planning/06-background-and-event-driven.md) -- Publish workflow
-- [02-module-mapping.md](../planning/02-module-mapping.md) -- Module structure
-- [05-migration-plan.md](../planning/05-migration-plan.md) -- Phased build plan
-- [06-background-and-event-driven.md](../planning/06-background-and-event-driven.md) -- Publish workflow
+- [05-build-plan.md](../planning/05-build-plan.md) -- Phased build plan
+- [06-publish-workflow.md](../planning/06-publish-workflow.md) -- Publish workflow

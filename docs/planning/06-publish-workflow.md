@@ -281,7 +281,7 @@ public async Task Run(
 
 ## Message Contract
 
-Lives in the PublicApi project so both the Host (sender) and Functions (receiver) can reference it.
+Lives in the PublicApi project so both the WebApi (sender) and Functions (receiver) can reference it.
 
 ```csharp
 // Exhibitor.Profiles.PublicApi/Messages/PublishProfileMessage.cs
@@ -346,7 +346,7 @@ public record ShowroomPreferencesInfo(int[] ShowroomDetails, int[] HoursOfOperat
 
 ## Functions `Program.cs`
 
-Registers the same module DI as the Host. The module code doesn't know which host is calling it.
+Registers the same module DI as the WebApi. The module code doesn't know which host is calling it.
 
 ```csharp
 // ExhibitorPlatform.Functions/Program.cs
@@ -379,7 +379,7 @@ host.Run();
 ## Where Everything Lives
 
 ```
-Profiles/
+Modules/Profiles/
   Exhibitor.Profiles.PublicApi/
     IProfileModuleApi.cs                     # PublishAsync, GetPublishedAsync
     Contracts/
@@ -426,7 +426,7 @@ ExhibitorPlatform.Functions/
     Profiles/
       PublishProfileFunction.cs              # Orchestrates: publish -> transform -> send
 
-Common/
+Modules/Common/
   Exhibitor.Common.Application/
     Models/
       PublishableEntity.cs                   # Abstract base class

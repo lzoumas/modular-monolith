@@ -14,9 +14,9 @@ How the Profile service source repo maps into the modular monolith. Phase 1 focu
 | `Exhibitor.Profile.Service.Application/Services/` | `Exhibitor.Profiles.Features/Services/` | Service classes (business logic) |
 | `Exhibitor.Profile.Service.Functions/` | `Exhibitor.Profiles.Features` | HTTP triggers -> FastEndpoints classes |
 | `Exhibitor.Profile.Service.Infrastructure/` | `Exhibitor.Profiles.Infrastructure` | Cosmos repositories |
-| `Exhibitor.Shared.Application/` | `Common/Exhibitor.Common.Application` | BaseEntity, PublishableEntity, shared models |
-| `Exhibitor.Shared.Cosmos/` | `Common/Exhibitor.Common.Cosmos` | Cosmos client, config, repos, health |
-| `Exhibitor.Shared.Cosmos.Testing/` | `Common/Exhibitor.Common.Cosmos.Testing` | Test fixtures |
+| `Exhibitor.Shared.Application/` | `Modules/Common/Exhibitor.Common.Application` | BaseEntity, PublishableEntity, shared models |
+| `Exhibitor.Shared.Cosmos/` | `Modules/Common/Exhibitor.Common.Cosmos` | Cosmos client, config, repos, health |
+| `Exhibitor.Shared.Cosmos.Testing/` | `Modules/Common/Exhibitor.Common.Cosmos.Testing` | Test fixtures |
 
 ---
 
@@ -44,7 +44,7 @@ ExhibitorPlatform.WebApi/
 
 ### Functions -- `ExhibitorPlatform.Functions`
 
-Azure Functions (Isolated Worker) for the publish workflow. See [06-background-and-event-driven](06-background-and-event-driven.md).
+See [06-publish-workflow](06-publish-workflow.md).
 
 ```
 ExhibitorPlatform.Functions/
@@ -61,10 +61,10 @@ ExhibitorPlatform.Functions/
 Absorbed from `experience.exhibitor.shared.service`. Project references, not NuGet.
 
 **Solution Explorer:** `Modules > Common`
-**Disk:** `Common/`
+**Disk:** `Modules/Common/`
 
 ```
-Common/
+Modules/Common/
   Exhibitor.Common.Application/
     Models/
       BaseEntity.cs
@@ -88,10 +88,10 @@ Common/
 ### Profiles Module
 
 **Solution Explorer:** `Modules > Profiles`
-**Disk:** `Profiles/`
+**Disk:** `Modules/Profiles/`
 
 ```
-Profiles/
+Modules/Profiles/
   Exhibitor.Profiles.Domain/
     Entities/
       Profile.cs                 # Inherits PublishableEntity<ProfileContent>
@@ -290,6 +290,6 @@ internal sealed class ProfileModuleApi : IProfileModuleApi
 ## Related Documents
 
 - [00-overview.md](00-overview.md) -- Solution structure & architecture
-- [06-background-and-event-driven.md](06-background-and-event-driven.md) -- Publish workflow details
+- [06-publish-workflow.md](06-publish-workflow.md) -- Publish workflow details
 - [03-integration-points.md](03-integration-points.md) -- PublicApi & dependency rules
 - [Draft/Publish Pattern](https://github.com/innovationsandmore/experience.exhibitor.profile.service/blob/feature/UXP-3481/docs/draft-publish-pattern.md) -- Source domain pattern

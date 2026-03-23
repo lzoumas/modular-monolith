@@ -30,13 +30,13 @@ The existing `Exhibitor.Shared.*` libraries contain base entities, Cosmos DB cli
 ## Implementation Tasks
 
 ### Exhibitor.Common.Application
-- [ ] Create `Common/Exhibitor.Common.Application/Exhibitor.Common.Application.csproj` (target `net9.0`, no framework dependencies)
+- [ ] Create `Modules/Common/Exhibitor.Common.Application/Exhibitor.Common.Application.csproj` (target `net9.0`, no framework dependencies)
 - [ ] Port `Models/BaseEntity.cs` -- Id, audit fields (CreatedOn, CreatedBy, ModifiedOn, ModifiedBy), soft delete (IsDeleted, DeletedOn, DeletedBy)
 - [ ] Port `Models/PublishableEntity.cs` -- abstract generic base with Draft content, Published content, PublishedOn, PublishedBy
 - [ ] Port `Interfaces/IPublishableService.cs` -- `PublishAsync()`, `DiscardDraftAsync()` contract
 
 ### Exhibitor.Common.Cosmos
-- [ ] Create `Common/Exhibitor.Common.Cosmos/Exhibitor.Common.Cosmos.csproj`:
+- [ ] Create `Modules/Common/Exhibitor.Common.Cosmos/Exhibitor.Common.Cosmos.csproj`:
   - Add `Microsoft.Azure.Cosmos` NuGet
   - Add `Microsoft.Extensions.Diagnostics.HealthChecks` NuGet
   - Reference `Exhibitor.Common.Application`
@@ -48,7 +48,7 @@ The existing `Exhibitor.Shared.*` libraries contain base entities, Cosmos DB cli
 - [ ] Port `Repositories/CosmosRepositoryBase.cs` -- generic CRUD operations against a Cosmos container
 
 ### Exhibitor.Common.Cosmos.Testing
-- [ ] Create `Common/Exhibitor.Common.Cosmos.Testing/Exhibitor.Common.Cosmos.Testing.csproj`:
+- [ ] Create `Modules/Common/Exhibitor.Common.Cosmos.Testing/Exhibitor.Common.Cosmos.Testing.csproj`:
   - Add `Testcontainers` NuGet (or Cosmos emulator equivalent)
   - Reference `Exhibitor.Common.Cosmos`
 - [ ] Port `ContainerDefinition.cs` -- container name + partition key definition
@@ -72,9 +72,9 @@ The existing `Exhibitor.Shared.*` libraries contain base entities, Cosmos DB cli
 
 | File | Change Type |
 |------|-------------|
-| `Common/Exhibitor.Common.Application/` | Add (entire project) |
-| `Common/Exhibitor.Common.Cosmos/` | Add (entire project) |
-| `Common/Exhibitor.Common.Cosmos.Testing/` | Add (entire project) |
+| `Modules/Common/Exhibitor.Common.Application/` | Add (entire project) |
+| `Modules/Common/Exhibitor.Common.Cosmos/` | Add (entire project) |
+| `Modules/Common/Exhibitor.Common.Cosmos.Testing/` | Add (entire project) |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations

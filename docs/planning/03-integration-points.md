@@ -76,4 +76,4 @@ The Profiles module never references Brands directly. Cross-module dependencies 
 
 - [00-overview.md](00-overview.md) -- Architecture overview
 - [02-module-mapping.md](02-module-mapping.md) -- Module structure & service layer
-- [06-background-and-event-driven.md](06-background-and-event-driven.md) -- Publish workflow
+- [06-publish-workflow.md](06-publish-workflow.md) -- Publish workflow

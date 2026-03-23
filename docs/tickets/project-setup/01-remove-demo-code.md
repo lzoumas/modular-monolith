@@ -45,7 +45,7 @@ The current repo contains a reference implementation with three demo modules (Sh
 ## Acceptance Criteria
 
 - [ ] No Shipments, Carriers, or Stocks project files remain
-- [ ] Solution file only contains the Host project (empty shell)
+- [ ] Solution file only contains the WebApi project (empty shell)
 - [ ] `dotnet build` succeeds
 - [ ] No broken project references
 
@@ -63,7 +63,7 @@ The current repo contains a reference implementation with three demo modules (Sh
 
 ## Risks / Considerations
 
-- The `.github/copilot-instructions.md` still references the demo structure. It will be updated as part of the Host project ticket once the new structure is in place.
+- The `.github/copilot-instructions.md` still references the demo structure. It will be updated as part of the WebApi project ticket once the new structure is in place.
 
 ## Verification Steps
 

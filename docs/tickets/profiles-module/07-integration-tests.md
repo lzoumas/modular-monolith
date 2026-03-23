@@ -30,7 +30,7 @@ Integration tests verify the full stack works end-to-end with a real Cosmos DB i
 ## Implementation Tasks
 
 ### Test Infrastructure
-- [ ] Create `Profiles/Exhibitor.Profiles.Tests.Integration/Exhibitor.Profiles.Tests.Integration.csproj`:
+- [ ] Create `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/Exhibitor.Profiles.Tests.Integration.csproj`:
   - Target `net9.0`
   - Reference `ExhibitorPlatform.WebApi`
   - Reference `Exhibitor.Common.Cosmos.Testing`
@@ -81,10 +81,10 @@ Integration tests verify the full stack works end-to-end with a real Cosmos DB i
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Tests.Integration/Exhibitor.Profiles.Tests.Integration.csproj` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Integration/Fixtures/ExhibitorPlatformCosmosDbFixture.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Integration/Fixtures/ExhibitorPlatformWebFactory.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Integration/Endpoints/*.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/Exhibitor.Profiles.Tests.Integration.csproj` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/Fixtures/ExhibitorPlatformCosmosDbFixture.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/Fixtures/ExhibitorPlatformWebFactory.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/Endpoints/*.cs` | Add |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations
@@ -96,6 +96,6 @@ Integration tests verify the full stack works end-to-end with a real Cosmos DB i
 ## Verification Steps
 
 1. Ensure Docker is running
-2. Run `dotnet test --project Profiles/Exhibitor.Profiles.Tests.Integration`
+2. Run `dotnet test --project Modules/Profiles/Exhibitor.Profiles.Tests.Integration`
 3. All tests pass -- emulator starts, tests run, emulator stops
 4. Verify no leftover Docker containers after test run

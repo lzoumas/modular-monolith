@@ -14,7 +14,7 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Set up `Program.cs` with FastEndpoints, Scalar (OpenAPI), health checks, exception handling middleware
 - [ ] Create `ExhibitorPlatform.Functions` Azure Functions (Isolated Worker) project
 - [ ] Set up Functions `Program.cs` with same module DI registration pattern
-- [ ] Copy `Exhibitor.Shared.*` into `Common/` as project references:
+- [ ] Copy `Exhibitor.Shared.*` into `Modules/Common/` as project references:
   - `Exhibitor.Common.Application` (includes `BaseEntity`, `PublishableEntity<T>`, `IPublishableService<T,C>`)
   - `Exhibitor.Common.Cosmos` (includes `CosmosDbDocument`, `PublishableDocument<T>`, `CosmosRepositoryBase`)
   - `Exhibitor.Common.Cosmos.Testing`
@@ -69,8 +69,8 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Wire up Service Bus connection in Functions config
 
 ### 1f. Tests
-- [ ] Create unit tests in `Profiles/Exhibitor.Profiles.Tests.Unit/`
-- [ ] Create integration tests in `Profiles/Exhibitor.Profiles.Tests.Integration/`
+- [ ] Create unit tests in `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/`
+- [ ] Create integration tests in `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/`
 - [ ] Set up `CosmosDbFixture` for integration tests
 
 ### 1g. Verify

@@ -88,8 +88,9 @@ repo-root/
 │       └── Profiles/
 │           └── PublishProfileFunction.cs           # ServiceBusTrigger -> publish -> transform -> send
 │
-├── Profiles/
-│   ├── Exhibitor.Profiles.Domain/
+├── Modules/
+│   ├── Profiles/
+│   │   ├── Exhibitor.Profiles.Domain/
 │   │   ├── Exhibitor.Profiles.Domain.csproj
 │   │   ├── Entities/
 │   │   │   ├── Profile.cs                         # Inherits PublishableEntity<ProfileContent>
@@ -156,37 +157,37 @@ repo-root/
 │   ├── Exhibitor.Profiles.Tests.Unit/
 │   │   └── Exhibitor.Profiles.Tests.Unit.csproj
 │   │
-│   └── Exhibitor.Profiles.Tests.Integration/
-│       └── Exhibitor.Profiles.Tests.Integration.csproj
-│
-├── Common/
-│   ├── Exhibitor.Common.Application/
-│   │   ├── Exhibitor.Common.Application.csproj
-│   │   ├── Models/
-│   │   │   ├── BaseEntity.cs                      # Id, audit fields, soft delete
-│   │   │   └── PublishableEntity.cs               # Abstract: Draft<T>, Published<T>, PublishedOn/By
-│   │   └── Interfaces/
-│   │       └── IPublishableService.cs             # PublishAsync, DiscardDraftAsync
+│   │   └── Exhibitor.Profiles.Tests.Integration/
+│   │       └── Exhibitor.Profiles.Tests.Integration.csproj
 │   │
-│   ├── Exhibitor.Common.Cosmos/
-│   │   ├── Exhibitor.Common.Cosmos.csproj
-│   │   ├── Configuration/
-│   │   │   └── CosmosDbConfig.cs
-│   │   ├── Documents/
-│   │   │   ├── CosmosDbDocument.cs
-│   │   │   └── PublishableDocument.cs             # Abstract: Draft<T>, Published<T> for Cosmos docs
-│   │   ├── Extensions/
-│   │   │   └── CosmosDbServiceExtensions.cs       # AddCosmosDbClient() DI extension
-│   │   ├── HealthChecks/
-│   │   │   └── CosmosDbHealthCheck.cs
-│   │   └── Repositories/
-│   │       └── CosmosRepositoryBase.cs
-│   │
-│   └── Exhibitor.Common.Cosmos.Testing/
-│       ├── Exhibitor.Common.Cosmos.Testing.csproj
-│       ├── ContainerDefinition.cs
-│       ├── CosmosDbFixture.cs
-│       └── CosmosDbFixtureOptions.cs
+│   └── Common/
+│       ├── Exhibitor.Common.Application/
+│       │   ├── Exhibitor.Common.Application.csproj
+│       │   ├── Models/
+│       │   │   ├── BaseEntity.cs                      # Id, audit fields, soft delete
+│       │   │   └── PublishableEntity.cs               # Abstract: Draft<T>, Published<T>, PublishedOn/By
+│       │   └── Interfaces/
+│       │       └── IPublishableService.cs             # PublishAsync, DiscardDraftAsync
+│       │
+│       ├── Exhibitor.Common.Cosmos/
+│       │   ├── Exhibitor.Common.Cosmos.csproj
+│       │   ├── Configuration/
+│       │   │   └── CosmosDbConfig.cs
+│       │   ├── Documents/
+│       │   │   ├── CosmosDbDocument.cs
+│       │   │   └── PublishableDocument.cs             # Abstract: Draft<T>, Published<T> for Cosmos docs
+│       │   ├── Extensions/
+│       │   │   └── CosmosDbServiceExtensions.cs       # AddCosmosDbClient() DI extension
+│       │   ├── HealthChecks/
+│       │   │   └── CosmosDbHealthCheck.cs
+│       │   └── Repositories/
+│       │       └── CosmosRepositoryBase.cs
+│       │
+│       └── Exhibitor.Common.Cosmos.Testing/
+│           ├── Exhibitor.Common.Cosmos.Testing.csproj
+│           ├── ContainerDefinition.cs
+│           ├── CosmosDbFixture.cs
+│           └── CosmosDbFixtureOptions.cs
 │
 ├── docs/
 │   └── planning/
@@ -263,7 +264,7 @@ Client -> DiscardDraftEndpoint -> IProfileService -> IProfileRepository -> Cosmo
 | [01-repo-inventory.md](01-repo-inventory.md) | Done | Detailed audit of each source repo |
 | [02-module-mapping.md](02-module-mapping.md) | Done | Profiles module structure, endpoint pattern, service layer |
 | [03-integration-points.md](03-integration-points.md) | Done | PublicApi interface design & dependency rules |
-| [04-data-migration.md](04-data-migration.md) | Done | Cosmos DB setup -- greenfield, no migration needed |
-| [05-migration-plan.md](05-migration-plan.md) | Done | Phased build plan & task breakdown |
-| [06-background-and-event-driven.md](06-background-and-event-driven.md) | Done | Publish workflow -- API endpoint + Azure Function |
-| [07-open-questions.md](07-open-questions.md) | Done | Decisions resolved, remaining unknowns |
+| [04-cosmos-setup.md](04-cosmos-setup.md) | Done | Cosmos DB setup -- greenfield, no migration needed |
+| [05-build-plan.md](05-build-plan.md) | Done | Phased build plan & task breakdown |
+| [06-publish-workflow.md](06-publish-workflow.md) | Done | Publish workflow -- API endpoint + Azure Function |
+| [07-decisions.md](07-decisions.md) | Done | Architecture decisions, remaining unknowns |

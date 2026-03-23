@@ -83,6 +83,6 @@ The modular monolith needs a single ASP.NET Core host that registers all module 
 ## Verification Steps
 
 1. Run `dotnet build` from solution root
-2. Run the host -- confirm it starts on the expected port
+2. Run the WebApi -- confirm it starts on the expected port
 3. Navigate to `/swagger` -- Scalar UI loads
 4. Hit `/health` -- returns 200 with `Healthy` status

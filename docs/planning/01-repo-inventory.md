@@ -1,4 +1,4 @@
-﻿# Repo Inventory
+# Repo Inventory
 
 Detailed audit of each source repository's structure, domain models, features, and dependencies.
 
@@ -169,13 +169,13 @@ tests/
 
 | Component | Used By | Monolith Mapping |
 |---|---|---|
-| `BaseEntity` | All domain models | -> `Common/Exhibitor.Common.Application` |
-| `CosmosDbConfig` | Infrastructure DI | -> `Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbDocument` | Cosmos repositories | -> `Common/Exhibitor.Common.Cosmos` |
-| `CosmosRepositoryBase` | All repositories | -> `Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbHealthCheck` | Host health endpoint | -> `Common/Exhibitor.Common.Cosmos` |
-| `AddCosmosDbClient()` | Program.cs setup | -> `Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbFixture` | Integration tests | -> `Common/Exhibitor.Common.Cosmos.Testing` |
+| `BaseEntity` | All domain models | -> `Modules/Common/Exhibitor.Common.Application` |
+| `CosmosDbConfig` | Infrastructure DI | -> `Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbDocument` | Cosmos repositories | -> `Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosRepositoryBase` | All repositories | -> `Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbHealthCheck` | Host health endpoint | -> `Modules/Common/Exhibitor.Common.Cosmos` |
+| `AddCosmosDbClient()` | Program.cs setup | -> `Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbFixture` | Integration tests | -> `Modules/Common/Exhibitor.Common.Cosmos.Testing` |
 
 ---
 

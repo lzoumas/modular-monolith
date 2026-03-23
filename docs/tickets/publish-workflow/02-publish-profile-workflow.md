@@ -18,7 +18,7 @@ Implement the full publish workflow: a FastEndpoints endpoint that sends a Servi
 
 ## Background / Context
 
-The publish workflow is the most architecturally significant feature. It demonstrates the split between the API Host (HTTP) and Azure Functions (async processing), both sharing the same module code. The endpoint is a thin sender; the Function is the orchestrator. See [06-background-and-event-driven.md](../../planning/06-background-and-event-driven.md) for full details.
+See [06-publish-workflow.md](../../planning/06-publish-workflow.md) for full details.
 
 **Flow:**
 ```
@@ -94,7 +94,7 @@ Service Bus "profile-publish" queue
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Features/Features/PublishProfile/PublishProfileEndpoint.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/PublishProfile/PublishProfileEndpoint.cs` | Add |
 | `ExhibitorPlatform.Functions/Functions/Profiles/PublishProfileFunction.cs` | Add |
 | `ExhibitorPlatform.Functions/Models/ExternalProfilePayload.cs` | Add |
 | `ExhibitorPlatform.WebApi/Program.cs` | Update (Service Bus DI) |
@@ -114,11 +114,11 @@ Service Bus "profile-publish" queue
 - **Separation of concerns:** The module does the business logic (draft -> published). The Function does the integration work (transform, send to external). The module never knows about external systems.
 - **ServiceBusSender injection:** Register in DI using `ServiceBusClient.CreateSender("profile-publish")`. The sender is thread-safe and should be a singleton.
 - **ExternalCatalogApi:** The external system URL comes from config. Use `IHttpClientFactory` named client pattern. The actual external system API contract should be confirmed -- the `ExternalProfilePayload` model in the planning doc is illustrative.
-- **Keep orchestration logic in the Function for now.** Extract to a `ProfilePublishOrchestrator` service only if it gets complex (see 06-background-and-event-driven.md).
+see 06-publish-workflow.md).
 
 ## Verification Steps
 
-1. Start the Host and Functions projects
+1. Start the WebApi and Functions projects
 2. Create a profile via `POST /api/profiles/{exhibitorId}`
 3. Publish via `POST /api/profiles/{exhibitorId}/{profileId}/publish` -> 202
 4. Check Function logs -- message received and processed

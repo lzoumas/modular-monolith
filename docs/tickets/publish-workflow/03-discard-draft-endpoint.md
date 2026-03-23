@@ -46,7 +46,7 @@ Discarding a draft reverts the profile's draft content to the last published sta
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs` | Add |
 
 ## Out of Scope
 

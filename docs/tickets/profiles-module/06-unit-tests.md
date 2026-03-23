@@ -29,7 +29,7 @@ Unit tests validate business logic in isolation without Cosmos DB or Service Bus
 
 ## Implementation Tasks
 
-- [ ] Create `Profiles/Exhibitor.Profiles.Tests.Unit/Exhibitor.Profiles.Tests.Unit.csproj`:
+- [ ] Create `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Exhibitor.Profiles.Tests.Unit.csproj`:
   - Target `net9.0`
   - Reference `Exhibitor.Profiles.Features`
   - Reference `Exhibitor.Profiles.Domain`
@@ -78,12 +78,12 @@ Unit tests validate business logic in isolation without Cosmos DB or Service Bus
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Tests.Unit/Exhibitor.Profiles.Tests.Unit.csproj` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Unit/Services/ProfileServiceTests.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Unit/Services/ProfileModuleApiTests.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Unit/Validators/*.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Unit/Mapping/*.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Tests.Unit/Fakers/*.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Exhibitor.Profiles.Tests.Unit.csproj` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Services/ProfileServiceTests.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Services/ProfileModuleApiTests.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Validators/*.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Mapping/*.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/Fakers/*.cs` | Add |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations
@@ -93,6 +93,6 @@ Unit tests validate business logic in isolation without Cosmos DB or Service Bus
 
 ## Verification Steps
 
-1. Run `dotnet test --project Profiles/Exhibitor.Profiles.Tests.Unit`
+1. Run `dotnet test --project Modules/Profiles/Exhibitor.Profiles.Tests.Unit`
 2. All tests pass
 3. Review test coverage -- all `ProfileService` methods have at least one test

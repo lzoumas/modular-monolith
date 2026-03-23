@@ -12,7 +12,7 @@ Create `Exhibitor.Profiles.Infrastructure` project with the Cosmos DB repository
 
 ## Background / Context
 
-The infrastructure layer owns the Cosmos DB data access for the Profiles module. `ProfileRepository` extends `CosmosRepositoryBase` (from Common) and works against the `profiles` container (partition key: `/exhibitorId`). The Cosmos document model (`ProfileDocument`) maps to/from the domain entity. See [02-module-mapping.md](../../planning/02-module-mapping.md) and [04-data-migration.md](../../planning/04-data-migration.md).
+See [02-module-mapping.md](../../planning/02-module-mapping.md) and [04-cosmos-setup.md](../../planning/04-cosmos-setup.md).
 
 **Source:** [experience.exhibitor.profile.service](https://github.com/innovationsandmore/experience.exhibitor.profile.service) `develop` branch -- `Infrastructure/` folder.
 
@@ -31,7 +31,7 @@ The infrastructure layer owns the Cosmos DB data access for the Profiles module.
 
 ## Implementation Tasks
 
-- [ ] Create `Profiles/Exhibitor.Profiles.Infrastructure/Exhibitor.Profiles.Infrastructure.csproj`:
+- [ ] Create `Modules/Profiles/Exhibitor.Profiles.Infrastructure/Exhibitor.Profiles.Infrastructure.csproj`:
   - Target `net9.0`
   - Reference `Exhibitor.Profiles.Domain`
   - Reference `Exhibitor.Common.Cosmos`
@@ -65,11 +65,11 @@ The infrastructure layer owns the Cosmos DB data access for the Profiles module.
 
 | File | Change Type |
 |------|-------------|
-| `Profiles/Exhibitor.Profiles.Infrastructure/Exhibitor.Profiles.Infrastructure.csproj` | Add |
-| `Profiles/Exhibitor.Profiles.Infrastructure/Interfaces/IProfileRepository.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Infrastructure/Documents/ProfileDocument.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Infrastructure/Repositories/ProfileRepository.cs` | Add |
-| `Profiles/Exhibitor.Profiles.Infrastructure/DependencyInjection.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Infrastructure/Exhibitor.Profiles.Infrastructure.csproj` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Infrastructure/Interfaces/IProfileRepository.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Infrastructure/Documents/ProfileDocument.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Infrastructure/Repositories/ProfileRepository.cs` | Add |
+| `Modules/Profiles/Exhibitor.Profiles.Infrastructure/DependencyInjection.cs` | Add |
 | `ExhibitorPlatform.sln` | Update |
 
 ## Risks / Considerations

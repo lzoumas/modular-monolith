@@ -12,13 +12,13 @@ Create the `ExhibitorPlatform.Functions` Azure Functions (Isolated Worker) proje
 
 ## Background / Context
 
-The publish workflow is async: the API host drops a message on a Service Bus queue, and an Azure Function picks it up, calls the module's PublicApi, and sends data to an external system. The Functions project shares the same module code as the Host via project references -- no HTTP hop between them. See [06-background-and-event-driven.md](../../planning/06-background-and-event-driven.md).
+See [06-publish-workflow.md](../../planning/06-publish-workflow.md).
 
 ## Scope
 
 ### In Scope
 - Create `ExhibitorPlatform.Functions` project targeting .NET 9 (Isolated Worker model)
-- Set up `Program.cs` with DI registration (same module pattern as Host)
+- Set up `Program.cs` with DI registration (same module pattern as WebApi)
 - Add `host.json` with standard Functions configuration
 - Add `appsettings.json` / `local.settings.json` with placeholder config
 - Create folder structure for function classes (`Functions/Profiles/`)
@@ -62,7 +62,7 @@ The publish workflow is async: the API host drops a message on a Service Bus que
 
 - [ ] `dotnet build` succeeds for the Functions project
 - [ ] Functions project starts locally (even with no functions registered)
-- [ ] `Program.cs` follows the same DI pattern as the Host
+- [ ] `Program.cs` follows the same DI pattern as the WebApi
 - [ ] Project references are set up for module resolution
 
 ## Files to Modify
@@ -77,7 +77,7 @@ The publish workflow is async: the API host drops a message on a Service Bus que
 
 ## Risks / Considerations
 
-- The Functions project and Host project both reference the same module projects. DI registrations (`AddProfilesModule()`, `AddProfilesInfrastructure()`) must be callable from both hosts.
+- The Functions project and WebApi project both reference the same module projects.
 - `local.settings.json` should be in `.gitignore` -- use a `.json.template` or document required settings.
 
 ## Verification Steps

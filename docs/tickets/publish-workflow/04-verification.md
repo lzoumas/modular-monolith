@@ -32,7 +32,7 @@ All individual stories across project-setup, profiles-module, and publish-workfl
 ## Implementation Tasks
 
 - [ ] Start Docker Compose (Cosmos emulator)
-- [ ] Start the Host project and verify:
+- [ ] Start the WebApi project and verify:
   - [ ] `/health` returns healthy
   - [ ] Scalar UI loads at `/swagger`
   - [ ] All profile endpoints are listed in Scalar
@@ -58,7 +58,7 @@ All individual stories across project-setup, profiles-module, and publish-workfl
 - [ ] Run all tests:
   - [ ] `dotnet test` from solution root -- all pass
 - [ ] Review and fix any issues found
-- [ ] Update planning doc status (05-migration-plan.md -- mark Phase 1 tasks as done)
+- [ ] Update planning doc status (05-build-plan.md -- mark Phase 1 tasks as done)
 
 ## Acceptance Criteria
 
