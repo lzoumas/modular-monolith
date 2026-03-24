@@ -14,9 +14,9 @@ How the Profile service source repo maps into the modular monolith. Phase 1 focu
 | `Exhibitor.Profile.Service.Application/Services/` | `Exhibitor.Profiles.Features/Services/` | Service classes (business logic) |
 | `Exhibitor.Profile.Service.Functions/` | `Exhibitor.Profiles.Features` | HTTP triggers -> FastEndpoints classes |
 | `Exhibitor.Profile.Service.Infrastructure/` | `Exhibitor.Profiles.Infrastructure` | Cosmos repositories |
-| `Exhibitor.Shared.Application/` | `Modules/Common/Exhibitor.Common.Application` | BaseEntity, PublishableEntity, shared models |
-| `Exhibitor.Shared.Cosmos/` | `Modules/Common/Exhibitor.Common.Cosmos` | Cosmos client, config, repos, health |
-| `Exhibitor.Shared.Cosmos.Testing/` | `Modules/Common/Exhibitor.Common.Cosmos.Testing` | Test fixtures |
+| `Exhibitor.Shared.Application/` | `src/Modules/Common/Exhibitor.Common.Application` | BaseEntity, PublishableEntity, shared models |
+| `Exhibitor.Shared.Cosmos/` | `src/Modules/Common/Exhibitor.Common.Cosmos` | Cosmos client, config, repos, health |
+| `Exhibitor.Shared.Cosmos.Testing/` | `src/Modules/Common/Exhibitor.Common.Cosmos.Testing` | Test fixtures |
 
 ---
 
@@ -29,7 +29,7 @@ How the Profile service source repo maps into the modular monolith. Phase 1 focu
 Single ASP.NET Core host. Replaces the Azure Functions `Program.cs`. Also hosts `BackgroundService` workers for async workflows.
 
 ```
-ExhibitorPlatform.WebApi/
+src/ExhibitorPlatform.WebApi/
   Program.cs                    # DI wiring, middleware, Cosmos setup, health checks
   appsettings.json
   appsettings.Development.json
@@ -47,7 +47,7 @@ ExhibitorPlatform.WebApi/
 Cross-module orchestration. See [06-publish-workflow](06-publish-workflow.md).
 
 ```
-Integration/
+src/Integration/
   Exhibitor.Integration/
     Features/
       PublishExhibitor/
@@ -64,10 +64,10 @@ Integration/
 Absorbed from `experience.exhibitor.shared.service`. Project references, not NuGet.
 
 **Solution Explorer:** `Modules > Common`
-**Disk:** `Modules/Common/`
+**Disk:** `src/Modules/Common/`
 
 ```
-Modules/Common/
+src/Modules/Common/
   Exhibitor.Common.Application/
     Models/
       BaseEntity.cs
@@ -91,10 +91,10 @@ Modules/Common/
 ### Profiles Module
 
 **Solution Explorer:** `Modules > Profiles`
-**Disk:** `Modules/Profiles/`
+**Disk:** `src/Modules/Profiles/`
 
 ```
-Modules/Profiles/
+src/Modules/Profiles/
   Exhibitor.Profiles.Domain/
     Entities/
       Profile.cs                 # Inherits PublishableEntity<ProfileContent>

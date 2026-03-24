@@ -38,6 +38,7 @@ Stocks/
   Modules.Stocks.Features/
   Modules.Stocks.Infrastructure/
   Modules.Stocks.PublicApi/
+Integration/                   # Cross-module orchestration projects (e.g. Exhibitor.Integration)
 ```
 
 ## Module Layer Conventions
@@ -74,7 +75,7 @@ Modules **never** reference another module's Domain or Infrastructure projects. 
 - `ICarrierModuleApi` — declared in `Modules.Carriers.PublicApi`
 - `IStockModuleApi` — declared in `Modules.Stocks.PublicApi`
 
-The host registers concrete implementations via DI in `Program.cs`.
+The host registers concrete implementations via DI in `Program.cs`. Integration projects orchestrate across modules and talk to external systems, while modules own their data and are self-contained.
 
 ### Domain Entities
 

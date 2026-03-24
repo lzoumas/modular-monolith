@@ -169,13 +169,13 @@ tests/
 
 | Component | Used By | Monolith Mapping |
 |---|---|---|
-| `BaseEntity` | All domain models | -> `Modules/Common/Exhibitor.Common.Application` |
-| `CosmosDbConfig` | Infrastructure DI | -> `Modules/Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbDocument` | Cosmos repositories | -> `Modules/Common/Exhibitor.Common.Cosmos` |
-| `CosmosRepositoryBase` | All repositories | -> `Modules/Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbHealthCheck` | Host health endpoint | -> `Modules/Common/Exhibitor.Common.Cosmos` |
-| `AddCosmosDbClient()` | Program.cs setup | -> `Modules/Common/Exhibitor.Common.Cosmos` |
-| `CosmosDbFixture` | Integration tests | -> `Modules/Common/Exhibitor.Common.Cosmos.Testing` |
+| `BaseEntity` | All domain models | -> `src/Modules/Common/Exhibitor.Common.Application` |
+| `CosmosDbConfig` | Infrastructure DI | -> `src/Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbDocument` | Cosmos repositories | -> `src/Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosRepositoryBase` | All repositories | -> `src/Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbHealthCheck` | Host health endpoint | -> `src/Modules/Common/Exhibitor.Common.Cosmos` |
+| `AddCosmosDbClient()` | Program.cs setup | -> `src/Modules/Common/Exhibitor.Common.Cosmos` |
+| `CosmosDbFixture` | Integration tests | -> `src/Modules/Common/Exhibitor.Common.Cosmos.Testing` |
 
 ---
 

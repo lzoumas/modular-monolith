@@ -12,9 +12,9 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Create `ExhibitorPlatform.WebApi` ASP.NET Core Web API project
 - [ ] Add FastEndpoints NuGet package
 - [ ] Set up `Program.cs` with FastEndpoints, Scalar (OpenAPI), health checks, exception handling middleware
-- [ ] Create `Integration/Exhibitor.Integration/` project for cross-module workflows
+- [ ] Create `src/Integration/Exhibitor.Integration/` project for cross-module workflows
 - [ ] Set up `DependencyInjection.cs` with `AddIntegrationWorkflows()`
-- [ ] Copy `Exhibitor.Shared.*` into `Modules/Common/` as project references:
+- [ ] Copy `Exhibitor.Shared.*` into `src/Modules/Common/` as project references:
   - `Exhibitor.Common.Application` (includes `BaseEntity`, `PublishableEntity<T>`, `IPublishableService<T,C>`)
   - `Exhibitor.Common.Cosmos` (includes `CosmosDbDocument`, `PublishableDocument<T>`, `CosmosRepositoryBase`)
   - `Exhibitor.Common.Cosmos.Testing`
@@ -69,8 +69,8 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Wire up Service Bus connection and HTTP client in WebApi `Program.cs`
 
 ### 1f. Tests
-- [ ] Create unit tests in `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/`
-- [ ] Create integration tests in `Modules/Profiles/Exhibitor.Profiles.Tests.Integration/`
+- [ ] Create unit tests in `tests/Modules/Profiles/Exhibitor.Profiles.Tests.Unit/`
+- [ ] Create integration tests in `tests/Modules/Profiles/Exhibitor.Profiles.Tests.Integration/`
 - [ ] Set up `CosmosDbFixture` for integration tests
 
 ### 1g. Verify
@@ -115,8 +115,8 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Add contract DTOs in `Contracts/`
 
 ### 2e. Tests
-- [ ] Create unit tests in `Brands/Exhibitor.Brands.Tests.Unit/`
-- [ ] Create integration tests in `Brands/Exhibitor.Brands.Tests.Integration/`
+- [ ] Create unit tests in `tests/Modules/Brands/Exhibitor.Brands.Tests.Unit/`
+- [ ] Create integration tests in `tests/Modules/Brands/Exhibitor.Brands.Tests.Integration/`
 
 ### 2f. Verify
 - [ ] All brand endpoints working via Scalar UI

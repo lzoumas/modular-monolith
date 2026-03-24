@@ -337,8 +337,8 @@ Discard is the inverse of publish -- it reverts draft content to the last publis
 So discard endpoints live inside their respective modules:
 
 ```
-Modules/Profiles/Exhibitor.Profiles.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs
-Modules/Brands/Exhibitor.Brands.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs
+src/Modules/Profiles/Exhibitor.Profiles.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs
+src/Modules/Brands/Exhibitor.Brands.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs
 ```
 
 Each endpoint calls its own module's `IProfileService.DiscardDraftAsync()` or `IBrandService.DiscardDraftAsync()` directly.
@@ -348,7 +348,7 @@ Each endpoint calls its own module's `IProfileService.DiscardDraftAsync()` or `I
 ## Where Everything Lives
 
 ```
-Integration/
+src/Integration/
   Exhibitor.Integration/
     Exhibitor.Integration.csproj               # Refs: Profiles.PublicApi, Brands.PublicApi,
                                                #       FastEndpoints, Azure.Messaging.ServiceBus
@@ -366,7 +366,7 @@ Integration/
       ExternalExhibitorPayload.cs              # Target schema for external system
     DependencyInjection.cs                     # AddIntegrationWorkflows()
 
-Modules/Profiles/
+src/Modules/Profiles/
   Exhibitor.Profiles.PublicApi/
     IProfileModuleApi.cs                       # PublishAsync(), GetPublishedAsync()
     Contracts/
@@ -382,7 +382,7 @@ Modules/Profiles/
       DiscardDraft/
         DiscardDraftEndpoint.cs                # Synchronous -- module-internal
 
-Modules/Brands/                                # Phase 2
+src/Modules/Brands/                            # Phase 2
   Exhibitor.Brands.PublicApi/
     IBrandModuleApi.cs                         # PublishAsync(), GetPublishedAsync()
     Contracts/
@@ -397,7 +397,7 @@ Modules/Brands/                                # Phase 2
       DiscardDraft/
         DiscardDraftEndpoint.cs                # Synchronous -- module-internal
 
-ExhibitorPlatform.WebApi/
+src/ExhibitorPlatform.WebApi/
   Program.cs                                   # Single host
 ```
 
