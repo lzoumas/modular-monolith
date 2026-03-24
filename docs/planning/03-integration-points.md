@@ -1,12 +1,12 @@
 # Integration Points
 
-How the Functions project and future modules interact with the Profiles module.
+How the Integration project and future modules interact with the Profiles module.
 
 ---
 
 ## PublicApi Interface
 
-The `IProfileModuleApi` interface is the **only** way code outside the Profiles module accesses profile data. The Functions project uses it for the publish workflow. Future modules (e.g. Brands) will use it for cross-module queries.
+The `IProfileModuleApi` interface is the **only** way code outside the Profiles module accesses profile data. The Integration project uses it for the publish workflow. Future modules (e.g. Brands) will use it for cross-module queries.
 
 ```csharp
 // Exhibitor.Profiles.PublicApi/IProfileModuleApi.cs
@@ -32,16 +32,15 @@ The implementation (`ProfileModuleApi`) lives in `Exhibitor.Profiles.Features/Se
 
 ```
 ExhibitorPlatform.WebApi
-  |-- Exhibitor.Profiles.Features
-  |-- Exhibitor.Profiles.Infrastructure
+  |-- Exhibitor.Integration                    <- publish workflow, cross-module orchestration
+  |-- Exhibitor.Profiles.Features              <- for DI registration (AddProfilesModule)
+  |-- Exhibitor.Profiles.Infrastructure        <- for DI registration (AddProfilesInfrastructure)
   |-- Exhibitor.Common.*
   +-- Platform.Shared.* (external, if needed)
 
-ExhibitorPlatform.Functions
-  |-- Exhibitor.Profiles.PublicApi              <- uses IProfileModuleApi in Function classes
-  |-- Exhibitor.Profiles.Features              <- for DI registration (AddProfilesModule)
-  |-- Exhibitor.Profiles.Infrastructure        <- for DI registration (AddProfilesInfrastructure)
-  +-- Exhibitor.Common.*
+Exhibitor.Integration
+  |-- Exhibitor.Profiles.PublicApi             <- uses IProfileModuleApi
+  +-- Exhibitor.Brands.PublicApi               <- uses IBrandModuleApi (Phase 2)
 
 Exhibitor.Profiles.Features
   |-- Exhibitor.Profiles.Domain
@@ -54,7 +53,7 @@ Exhibitor.Profiles.Infrastructure
   +-- Exhibitor.Common.Cosmos
 ```
 
-> **Rule:** Function classes only interact with modules through **PublicApi interfaces**. The Features/Infrastructure references are only for DI registration (`AddProfilesModule()`).
+> **Rule:** The Integration project only interacts with modules through **PublicApi interfaces**. It never references Features or Infrastructure directly.
 
 ---
 

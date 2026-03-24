@@ -26,7 +26,7 @@ How the Profile service source repo maps into the modular monolith. Phase 1 focu
 
 ### Host -- `ExhibitorPlatform.WebApi`
 
-Single ASP.NET Core host. Replaces the Azure Functions `Program.cs`.
+Single ASP.NET Core host. Replaces the Azure Functions `Program.cs`. Also hosts `BackgroundService` workers for async workflows.
 
 ```
 ExhibitorPlatform.WebApi/
@@ -42,18 +42,21 @@ ExhibitorPlatform.WebApi/
 - Configure middleware (exception handling, auth, Swagger/Scalar)
 - Health check endpoints
 
-### Functions -- `ExhibitorPlatform.Functions`
+### Integration -- `Exhibitor.Integration`
 
-See [06-publish-workflow](06-publish-workflow.md).
+Cross-module orchestration. See [06-publish-workflow](06-publish-workflow.md).
 
 ```
-ExhibitorPlatform.Functions/
-  Program.cs                    # DI wiring -- registers same module as Host
-  Functions/
-    Profiles/
-      PublishProfileFunction.cs # ServiceBusTrigger -> publish -> transform -> send
-  host.json
-  appsettings.json
+Integration/
+  Exhibitor.Integration/
+    Features/
+      PublishExhibitor/
+        PublishExhibitorEndpoint.cs  # POST /api/exhibitors/{id}/publish -> SB message
+    Workers/
+      ExhibitorPublishWorker.cs     # BackgroundService -- processes SB messages
+    Services/
+      ExhibitorPublishOrchestrator.cs  # Calls module PublicApis, transforms, sends
+    DependencyInjection.cs          # AddIntegrationWorkflows()
 ```
 
 ### Common -- Shared Libraries
@@ -107,7 +110,7 @@ Modules/Profiles/
     DependencyInjection.cs       # AddProfilesModule()
     Services/
       IProfileService.cs         # Internal service interface (CRUD + publish + discard)
-      ProfileService.cs          # Business logic -- called by endpoints AND Functions
+      ProfileService.cs          # Business logic -- called by endpoints AND Integration
       ProfileModuleApi.cs        # Implements IProfileModuleApi, delegates to IProfileService
     Features/
       CreateProfile/
@@ -146,11 +149,9 @@ Modules/Profiles/
       ProfileDocument.cs          # Inherits PublishableDocument<ProfileContentDocument>
 
   Exhibitor.Profiles.PublicApi/
-    IProfileModuleApi.cs         # PublishAsync, GetPublishedAsync -- for Functions
+    IProfileModuleApi.cs         # PublishAsync, GetPublishedAsync -- for Integration project
     Contracts/
       PublishedProfile.cs        # Lightweight published snapshot DTOs
-    Messages/
-      PublishProfileMessage.cs   # Service Bus message contract
 ```
 
 ---
@@ -171,7 +172,7 @@ FastEndpoints endpoint -> IProfileService -> IProfileRepository -> Cosmos
 
 **After (monolith -- Service Bus):**
 ```
-Azure Function trigger -> IProfileModuleApi -> IProfileService -> IProfileRepository -> Cosmos
+ExhibitorPublishWorker -> ExhibitorPublishOrchestrator -> IProfileModuleApi -> IProfileService -> Cosmos
 ```
 
 The layers are:
@@ -179,14 +180,14 @@ The layers are:
 | Layer | Responsibility | Who calls it |
 |---|---|---|
 | **FastEndpoints endpoint** | HTTP shell -- routing, binding, validation, HTTP status codes | ASP.NET Core pipeline |
-| **Azure Function** | Trigger shell -- receives message, orchestrates, calls external systems | Azure Functions runtime |
-| **IProfileModuleApi** (PublicApi) | Cross-boundary facade -- exposes module operations to outsiders | Functions, future modules |
+| **Integration worker** | Trigger shell -- receives SB message, orchestrates, calls external systems | BackgroundService in WebApi |
+| **IProfileModuleApi** (PublicApi) | Cross-boundary facade -- exposes module operations to outsiders | Integration project, future modules |
 | **IProfileService** (internal) | Business logic -- CRUD, publish, discard, validation rules | Endpoints (directly), PublicApi (via adapter) |
 | **IProfileRepository** (infra) | Data access -- Cosmos DB reads/writes | ProfileService |
 
 Key rules:
 - **Endpoints** inject `IProfileService` directly (they're inside the module)
-- **Functions** inject `IProfileModuleApi` (they're outside the module boundary)
+- **Integration project** injects `IProfileModuleApi` (it's outside the module boundary)
 - **No mediator, no commands, no queries, no handlers** -- just service methods
 
 ## Endpoint Pattern -- FastEndpoints
@@ -240,9 +241,9 @@ public sealed class CreateProfileEndpoint : Endpoint<CreateProfileRequest, Creat
 - The endpoint IS the handler -- no separate CQRS command/handler classes needed
 
 **Why business logic lives in `IProfileService`, not the endpoint?**
-- The publish workflow needs to call profile logic from the Azure Function
+- The publish workflow needs to call profile logic from the Integration project
 - `IProfileService` is the single source of truth for business rules
-- Endpoints are thin HTTP shells; Functions are thin trigger shells; both delegate to the service
+- Endpoints are thin HTTP shells; the Integration worker is a thin trigger shell; both delegate to the service
 
 ---
 

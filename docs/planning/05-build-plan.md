@@ -12,8 +12,8 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 - [ ] Create `ExhibitorPlatform.WebApi` ASP.NET Core Web API project
 - [ ] Add FastEndpoints NuGet package
 - [ ] Set up `Program.cs` with FastEndpoints, Scalar (OpenAPI), health checks, exception handling middleware
-- [ ] Create `ExhibitorPlatform.Functions` Azure Functions (Isolated Worker) project
-- [ ] Set up Functions `Program.cs` with same module DI registration pattern
+- [ ] Create `Integration/Exhibitor.Integration/` project for cross-module workflows
+- [ ] Set up `DependencyInjection.cs` with `AddIntegrationWorkflows()`
 - [ ] Copy `Exhibitor.Shared.*` into `Modules/Common/` as project references:
   - `Exhibitor.Common.Application` (includes `BaseEntity`, `PublishableEntity<T>`, `IPublishableService<T,C>`)
   - `Exhibitor.Common.Cosmos` (includes `CosmosDbDocument`, `PublishableDocument<T>`, `CosmosRepositoryBase`)
@@ -55,18 +55,18 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
   - [ ] `UpdateProfile/` -- endpoint, request, validator, mapping
   - [ ] `DeleteProfile/` -- endpoint
   - [ ] `ListProfiles/` -- endpoint, response, mapping
-  - [ ] `PublishProfile/` -- endpoint (sends Service Bus message, returns 202)
   - [ ] `DiscardDraft/` -- endpoint (synchronous, calls `IProfileService` directly)
 
 ### 1d. PublicApi Layer
 - [ ] Create `Exhibitor.Profiles.PublicApi` project
 - [ ] Define `IProfileModuleApi` interface
 - [ ] Add contract DTOs in `Contracts/`
-- [ ] Add `PublishProfileMessage` in `Messages/`
 
-### 1e. Azure Function
-- [ ] Add `PublishProfileFunction` to `ExhibitorPlatform.Functions`
-- [ ] Wire up Service Bus connection in Functions config
+### 1e. Integration -- Publish Workflow
+- [ ] Add `PublishExhibitorEndpoint` to `Exhibitor.Integration` (POST /api/exhibitors/{id}/publish -> SB message)
+- [ ] Add `ExhibitorPublishWorker` (BackgroundService with ServiceBusProcessor)
+- [ ] Add `ExhibitorPublishOrchestrator` (calls IProfileModuleApi, transforms, sends to external)
+- [ ] Wire up Service Bus connection and HTTP client in WebApi `Program.cs`
 
 ### 1f. Tests
 - [ ] Create unit tests in `Modules/Profiles/Exhibitor.Profiles.Tests.Unit/`
@@ -75,7 +75,7 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
 
 ### 1g. Verify
 - [ ] All profile endpoints working via Scalar UI
-- [ ] Publish workflow end-to-end (endpoint -> Service Bus -> Function -> Cosmos)
+- [ ] Publish workflow end-to-end (endpoint -> Service Bus -> BackgroundService worker -> Cosmos)
 - [ ] All unit tests passing
 - [ ] All integration tests passing
 
@@ -107,7 +107,7 @@ Phased build plan for the exhibitor platform modular monolith. This is greenfiel
   - [ ] File upload (UploadBrandMedia)
 - [ ] Create service layer (`IBrandService`, `BrandService`, `BrandModuleApi`)
 - [ ] Add `PublishBrand/` and `DiscardDraft/` features
-- [ ] Add `PublishBrandFunction` to `ExhibitorPlatform.Functions`
+- [ ] Update `ExhibitorPublishOrchestrator` in Integration to call `IBrandModuleApi.PublishAsync()`
 
 ### 2d. PublicApi Layer
 - [ ] Create `Exhibitor.Brands.PublicApi` project

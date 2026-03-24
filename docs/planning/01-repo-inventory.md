@@ -192,5 +192,5 @@ tests/
 | `Platform.Shared.Functions` | Azure Functions HTTP helpers, middleware, parameter binding | No -- replaced by ASP.NET Core middleware |
 | `Platform.Shared.Extensions` | General .NET extensions | Yes -- likely |
 | `Platform.Shared.FileStorage` | Azure Blob Storage abstraction | Yes -- brands file upload |
-| `Platform.Shared.ServiceBus` | Azure Service Bus helpers | Yes -- publish workflow via Azure Functions |
+| `Platform.Shared.ServiceBus` | Azure Service Bus helpers | Yes -- publish workflow via BackgroundService |
 | `Platform.Shared.ManagedIdentityApiClient` | Azure AD managed identity HTTP client | TBD -- depends on external API calls |
