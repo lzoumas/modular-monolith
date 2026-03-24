@@ -21,10 +21,12 @@ The current services already use `Ardalis.Result`. Zero migration effort. No fun
 
 With FastEndpoints, HTTP endpoints handle their own request/response flow. Shared business logic (publish, discard draft) lives in `IProfileService` / `ProfileService`. `Platform.Shared.Mediator` is not needed in the monolith -- can be revisited later if pipeline behaviors become necessary.
 
-### 4. Background / Event-Driven - Azure Functions (Isolated Worker)
+### 4. Async Consumers -- BackgroundService + Integration project (single host)
 **Status:** DECIDED
 
-A separate `ExhibitorPlatform.Functions` project handles Service Bus triggers. It references the same module projects as the Web API (no HTTP hop).
+No separate Azure Functions project. Service Bus consumers run as `BackgroundService` in the WebApi process. The publish workflow spans multiple modules (Profiles + Brands), so the orchestration lives in a dedicated `Exhibitor.Integration` project that references only module PublicApi interfaces. Single deployment, single DI container.
+
+Service Bus retry and dead-lettering are queue-level features -- `ServiceBusProcessor` gets them automatically via `MaxDeliveryCount`. See [06-publish-workflow](06-publish-workflow.md) for full analysis.
 
 ### 5. Cosmos DB - New database, no migration needed
 **Status:** DECIDED

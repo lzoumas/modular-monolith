@@ -1,109 +1,151 @@
-# Background & Event-Driven Workloads
+# Publish Workflow
 
-How the publish workflow runs across two entry points: the **API Host** (HTTP) and **Azure Functions** (Service Bus).
+How the publish workflow runs asynchronously: an API endpoint drops a Service Bus message, and a consumer processes it -- publishing profiles AND brands, transforming to a target schema, and sending to an external system.
+
+---
+
+## The Problem: Cross-Module Orchestration
+
+The publish workflow is not a single-module concern. When an exhibitor publishes, the system needs to:
+
+1. **Publish the profile** -- call `IProfileModuleApi.PublishAsync()` (draft -> published in Cosmos)
+2. **Publish brands** -- call `IBrandModuleApi.PublishAsync()` (draft -> published in Cosmos)
+3. **Transform** -- combine both results into the external system's target schema
+4. **Send** -- HTTP POST to the external system
+
+Steps 1--2 are module business logic (each module owns its own publish). Steps 3--4 are integration logic (combining cross-module data for an external consumer). This orchestration can't live inside either the Profiles or Brands module -- it spans both.
+
+### Where previous options fall short
+
+- **Option A (consumer inside a module)**: The orchestrator would need to call the OTHER module's PublicApi. The Profiles module would depend on the Brands PublicApi and vice versa. Neither module is the right owner.
+- **Option B (separate Functions project)**: Solves the ownership problem (Functions project is the integration layer), but adds a second deployment, duplicate DI, and is no longer a true monolith.
+
+### The answer: a dedicated Integration project
+
+The orchestration is its own concern -- not owned by any module. A separate `Exhibitor.Integration` project sits between modules and external systems:
+
+- References only module **PublicApi** interfaces (never internal module code)
+- Owns the worker (`BackgroundService`), orchestrator, and external DTOs
+- Runs in the WebApi process (single deployment, single DI container)
 
 ---
 
 ## Architecture
 
-Two deployable projects share the same module code. The API Host handles HTTP requests. Azure Functions handles Service Bus messages. Both resolve services from the same module DI registrations -- no HTTP hop between them.
-
 ```
-                 +----------------------------+
-  HTTP --------> |   ExhibitorPlatform.WebApi   |--+
-                 +----------------------------+  |
-                                                 |  project reference
-                                                 v
-                                    +------------------------+
-                                    |   Shared Module Code   |
-                                    |                        |
-                                    |  Profiles.Features     |
-                                    |  Profiles.Infra        |
-                                    |  Common.*              |
-                                    +------------------------+
-                                                 ^
-                                                 |  project reference
-                 +----------------------------+  |
-  Service Bus -> | ExhibitorPlatform.Functions|--+
-                 +----------------------------+
+                  ExhibitorPlatform.WebApi (single host)
+                  |
+                  |  registers all modules + integration
+                  v
++----------------------------------------------------------+
+|                                                          |
+|  Modules/Profiles/             Modules/Brands/           |
+|  +--------------------+       +-------------------+      |
+|  | IProfileModuleApi  |       | IBrandModuleApi   |      |
+|  | - PublishAsync()   |       | - PublishAsync()  |      |
+|  | - GetPublished()   |       | - GetPublished()  |      |
+|  +--------------------+       +-------------------+      |
+|          ^                            ^                  |
+|          |                            |                  |
+|          +------- both called by -----+                  |
+|                       |                                  |
+|  Integration/                                            |
+|  +--------------------------------------------+         |
+|  | ExhibitorPublishOrchestrator               |         |
+|  |                                            |         |
+|  | 1. IProfileModuleApi.PublishAsync()         |         |
+|  | 2. IBrandModuleApi.PublishAsync()           |         |
+|  | 3. Combine + transform to target schema    |         |
+|  | 4. HTTP POST to external system            |         |
+|  +--------------------------------------------+         |
+|          ^                                               |
+|          |                                               |
+|  +--------------------------------------------+         |
+|  | ExhibitorPublishWorker (BackgroundService)  |         |
+|  | ServiceBusProcessor "exhibitor-publish"     |         |
+|  +--------------------------------------------+         |
+|                                                          |
++----------------------------------------------------------+
 ```
-
-**Why Azure Functions instead of `BackgroundService`?**
-
-The publish workflow sends data to an **external system**. If that system is down, Azure Functions automatically retries the message and dead-letters it after max attempts. With `BackgroundService` you'd build all of that yourself. Functions also scale independently from the API host.
 
 ---
 
-## Publish Flow (Profiles)
+## Publish Flow
 
 ```
 User clicks "Publish"
         |
         v
-+----------------------+
-|  ExhibitorPlatform   |
-|       .Host          |
-|                      |
-|  POST /profiles/     |
-|  {exhibitorId}/      |
-|  {profileId}/publish |------> Service Bus: "profile-publish" queue
-|                      |        Payload: { exhibitorId, profileId, publishedBy }
-|  Returns: 202        |
-|  Accepted            |
-+----------------------+
-                                        |
-                                        v
-                              +----------------------+
-                              |  ExhibitorPlatform   |
-                              |     .Functions       |
-                              |                      |
-                              |  ServiceBusTrigger   |
-                              |  "profile-publish"   |
-                              |                      |
-                              |  1. Publish profile  |<-- IProfileModuleApi.PublishAsync()
-                              |  2. Transform        |
-                              |  3. Send to external |<-- HTTP to external system
-                              +----------------------+
++---------------------------+
+|  ExhibitorPlatform.WebApi |
+|                           |
+|  POST /api/exhibitors/    |
+|  {exhibitorId}/publish    |----> Service Bus: "exhibitor-publish" queue
+|                           |      Payload: { exhibitorId, publishedBy }
+|  Returns: 202 Accepted    |
++---------------------------+
+           |
+           |  (same process)
+           v
++----------------------------------------------+
+|  ExhibitorPublishWorker (BackgroundService)  |
+|  ServiceBusProcessor "exhibitor-publish"     |
+|                                              |
+|  ExhibitorPublishOrchestrator:               |
+|    1. IProfileModuleApi.PublishAsync()        |<-- Profile module business logic
+|    2. IBrandModuleApi.PublishAsync()          |<-- Brands module business logic
+|    3. Combine + transform to target schema   |
+|    4. HTTP POST to external system           |<-- IHttpClientFactory
++----------------------------------------------+
 ```
+
+**Why Service Bus if it's the same process?**
+
+The publish endpoint returns `202 Accepted` immediately. The actual work (publish to Cosmos, transform, POST to external) happens asynchronously. If the external system is slow or down, the user isn't waiting. Service Bus provides:
+
+- **Durability** -- message survives process restarts
+- **Retry** -- failed messages retried up to `MaxDeliveryCount`
+- **Dead-letter** -- poison messages move to the dead-letter queue automatically
+- **Decoupling** -- the endpoint doesn't need to know what happens after
+
+These are queue-level features, not Azure Functions features. `ServiceBusProcessor` gets them all.
 
 ---
 
-## The API Endpoint
+## The Publish Endpoint
 
-The publish endpoint is thin -- validate, drop a message on the queue, return `202 Accepted`. The actual publish logic runs asynchronously in the Function.
+Lives in the Integration project (not in a module) because it's an exhibitor-level action, not a profile-level or brand-level action.
 
 ```csharp
-// Exhibitor.Profiles.Features/Features/PublishProfile/PublishProfileEndpoint.cs
+// Exhibitor.Integration/Features/PublishExhibitor/PublishExhibitorEndpoint.cs
 
-public sealed class PublishProfileEndpoint : EndpointWithoutRequest
+public sealed class PublishExhibitorEndpoint : EndpointWithoutRequest
 {
     private readonly ServiceBusSender _sender;
 
-    public PublishProfileEndpoint(ServiceBusSender sender)
+    public PublishExhibitorEndpoint(ServiceBusSender sender)
     {
         _sender = sender;
     }
 
     public override void Configure()
     {
-        Post("/api/profiles/{exhibitorId}/{profileId}/publish");
+        Post("/api/exhibitors/{exhibitorId}/publish");
     }
 
     public override async Task HandleAsync(CancellationToken ct)
     {
         var exhibitorId = Route<string>("exhibitorId")!;
-        var profileId = Route<string>("profileId")!;
         var publishedBy = User.Identity?.Name ?? "system";
 
-        var message = new ServiceBusMessage(BinaryData.FromObjectAsJson(new PublishProfileMessage
-        {
-            ExhibitorId = exhibitorId,
-            ProfileId = profileId,
-            PublishedBy = publishedBy
-        }));
+        var message = new ServiceBusMessage(BinaryData.FromObjectAsJson(
+            new PublishExhibitorMessage
+            {
+                ExhibitorId = exhibitorId,
+                PublishedBy = publishedBy
+            }));
 
         await _sender.SendMessageAsync(message, ct);
-
         await SendAsync(null, 202, ct);
     }
 }
@@ -111,331 +153,334 @@ public sealed class PublishProfileEndpoint : EndpointWithoutRequest
 
 ---
 
-## The Azure Function
+## The Worker
 
-The Function is the orchestrator. It calls `IProfileModuleApi` to publish the profile, transforms the result, and sends it to the external system.
+A `BackgroundService` in the Integration project. Processes messages from the `exhibitor-publish` queue and delegates to the orchestrator.
 
 ```csharp
-// ExhibitorPlatform.Functions/Functions/Profiles/PublishProfileFunction.cs
+// Exhibitor.Integration/Workers/ExhibitorPublishWorker.cs
 
-public class PublishProfileFunction
+public sealed class ExhibitorPublishWorker : BackgroundService
 {
-    private readonly IProfileModuleApi _profileApi;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<PublishProfileFunction> _logger;
+    private readonly ServiceBusProcessor _processor;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ExhibitorPublishWorker> _logger;
 
-    public PublishProfileFunction(
-        IProfileModuleApi profileApi,
-        IHttpClientFactory httpClientFactory,
-        ILogger<PublishProfileFunction> logger)
+    public ExhibitorPublishWorker(
+        ServiceBusClient client,
+        IServiceScopeFactory scopeFactory,
+        ILogger<ExhibitorPublishWorker> logger)
     {
-        _profileApi = profileApi;
-        _httpClientFactory = httpClientFactory;
+        _processor = client.CreateProcessor("exhibitor-publish", new ServiceBusProcessorOptions
+        {
+            MaxConcurrentCalls = 5,
+            AutoCompleteMessages = false  // manual complete after success
+        });
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
-    [Function("PublishProfile")]
-    public async Task Run(
-        [ServiceBusTrigger("profile-publish", Connection = "ServiceBusConnection")]
-        ServiceBusReceivedMessage message,
-        FunctionContext context)
+    protected override async Task ExecuteAsync(CancellationToken ct)
     {
-        var payload = message.Body.ToObjectFromJson<PublishProfileMessage>();
-
-        _logger.LogInformation("Publishing profile {ProfileId} for exhibitor {ExhibitorId}",
-            payload.ProfileId, payload.ExhibitorId);
-
-        // 1. Publish the profile (draft -> published) via PublicApi
-        var publishResult = await _profileApi.PublishAsync(
-            payload.ExhibitorId, payload.ProfileId, payload.PublishedBy);
-
-        if (!publishResult.IsSuccess)
+        _processor.ProcessMessageAsync += async args =>
         {
-            _logger.LogError("Failed to publish profile {ProfileId}: {Errors}",
-                payload.ProfileId, string.Join(", ", publishResult.Errors));
-            throw new InvalidOperationException($"Publish failed for profile {payload.ProfileId}");
-            // Throwing -> message retried -> dead-lettered after max attempts
-        }
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var orchestrator = scope.ServiceProvider
+                .GetRequiredService<IExhibitorPublishOrchestrator>();
 
-        var published = publishResult.Value;
+            var message = args.Message.Body
+                .ToObjectFromJson<PublishExhibitorMessage>();
 
-        // 2. Transform for external system
-        var externalPayload = new ExternalProfilePayload
-        {
-            ExhibitorId = published.ExhibitorId,
-            CompanyName = published.CompanyName,
-            Contact = new ExternalContact
-            {
-                FirstName = published.Content.ShowroomContact.FirstName,
-                LastName = published.Content.ShowroomContact.LastName,
-                Email = published.Content.ShowroomContact.Email,
-                Phone = published.Content.ShowroomContact.Phone
-            },
-            Website = published.Content.CompanyContact.Website,
-            PublishedAt = published.PublishedOn
+            await orchestrator.PublishAndSyncAsync(message, args.CancellationToken);
+
+            await args.CompleteMessageAsync(args.Message, args.CancellationToken);
         };
 
-        // 3. Send to external system
-        var client = _httpClientFactory.CreateClient("ExternalCatalogApi");
-        var response = await client.PostAsJsonAsync("/api/exhibitors/sync", externalPayload);
-        response.EnsureSuccessStatusCode();
-        // If this throws -> message retried automatically
+        _processor.ProcessErrorAsync += args =>
+        {
+            _logger.LogError(args.Exception,
+                "Error processing message from {Queue}", args.EntityPath);
+            return Task.CompletedTask;
+        };
 
-        _logger.LogInformation("Profile {ProfileId} published and synced to external system",
-            payload.ProfileId);
+        await _processor.StartProcessingAsync(ct);
+        await Task.Delay(Timeout.Infinite, ct);
+        await _processor.StopProcessingAsync();
     }
 }
 ```
 
 ---
 
-## Where Does Logic Live?
+## The Orchestrator
 
-The Function is an **orchestrator**, not a business logic container. Here's the split:
-
-| Concern | Where it lives | Why |
-|---|---|---|
-| Publish profile (draft -> published) | `IProfileService.PublishAsync()` inside the Profiles module | Business rule -- owned by the module |
-| Transform for external system | In the Function itself | Integration concern -- the module doesn't know about external systems |
-| Send to external system | In the Function itself | Integration concern |
-| Retry / dead-letter on failure | Azure Functions runtime | Infrastructure concern |
-
-**The Function's job is orchestration:**
-1. Call module PublicApi to do the business operation
-2. Take the result and adapt it for the external system
-3. Send it
-
-The module does the **domain work**. The Function does the **integration work**. The module has no idea an external system exists.
-
-### When to extract an integration service
-
-If the Function's orchestration logic gets complex (multiple module calls, complex transformations, conditional routing), extract it into a service class **inside the Functions project**:
-
-```
-ExhibitorPlatform.Functions/
-  Services/
-    ProfilePublishOrchestrator.cs    # Extracted if orchestration gets complex
-  Functions/
-    Profiles/
-      PublishProfileFunction.cs      # Thin trigger -- calls orchestrator
-```
+The core of the publish workflow. Calls both modules' PublicApis, combines the results, transforms to the target schema, and sends to the external system.
 
 ```csharp
-// ExhibitorPlatform.Functions/Services/ProfilePublishOrchestrator.cs
-public class ProfilePublishOrchestrator
+// Exhibitor.Integration/Services/IExhibitorPublishOrchestrator.cs
+
+public interface IExhibitorPublishOrchestrator
 {
-    private readonly IProfileModuleApi _profileApi;
-    private readonly IHttpClientFactory _httpClientFactory;
+    Task PublishAndSyncAsync(PublishExhibitorMessage message, CancellationToken ct);
+}
 
-    public ProfilePublishOrchestrator(
-        IProfileModuleApi profileApi,
-        IHttpClientFactory httpClientFactory)
+// Exhibitor.Integration/Services/ExhibitorPublishOrchestrator.cs
+
+internal sealed class ExhibitorPublishOrchestrator(
+    IProfileModuleApi profileApi,
+    IBrandModuleApi brandApi,
+    IHttpClientFactory httpClientFactory,
+    ILogger<ExhibitorPublishOrchestrator> logger) : IExhibitorPublishOrchestrator
+{
+    public async Task PublishAndSyncAsync(PublishExhibitorMessage message, CancellationToken ct)
     {
-        _profileApi = profileApi;
-        _httpClientFactory = httpClientFactory;
-    }
+        var exhibitorId = message.ExhibitorId;
+        var publishedBy = message.PublishedBy;
 
-    public async Task PublishAndSyncAsync(PublishProfileMessage message, CancellationToken ct)
-    {
-        // 1. Module business logic
-        var result = await _profileApi.PublishAsync(
-            message.ExhibitorId, message.ProfileId, message.PublishedBy, ct);
+        // 1. Publish profile (draft -> published)
+        var profileResult = await profileApi.PublishAsync(exhibitorId, publishedBy, ct);
 
-        if (!result.IsSuccess)
-            throw new InvalidOperationException($"Publish failed: {string.Join(", ", result.Errors)}");
+        if (!profileResult.IsSuccess)
+            throw new InvalidOperationException(
+                $"Profile publish failed for exhibitor {exhibitorId}: " +
+                string.Join(", ", profileResult.Errors));
 
-        // 2. Integration: transform
-        var payload = MapToExternalPayload(result.Value);
+        logger.LogInformation("Profile published for exhibitor {ExhibitorId}", exhibitorId);
 
-        // 3. Integration: send
-        var client = _httpClientFactory.CreateClient("ExternalCatalogApi");
+        // 2. Publish brands (draft -> published)
+        var brandsResult = await brandApi.PublishAsync(exhibitorId, publishedBy, ct);
+
+        if (!brandsResult.IsSuccess)
+            throw new InvalidOperationException(
+                $"Brands publish failed for exhibitor {exhibitorId}: " +
+                string.Join(", ", brandsResult.Errors));
+
+        logger.LogInformation("Brands published for exhibitor {ExhibitorId}", exhibitorId);
+
+        // 3. Transform -- combine profile + brands into target schema
+        var payload = MapToExternalPayload(profileResult.Value, brandsResult.Value);
+
+        // 4. Send to external system
+        var client = httpClientFactory.CreateClient("ExternalCatalogApi");
         var response = await client.PostAsJsonAsync("/api/exhibitors/sync", payload, ct);
         response.EnsureSuccessStatusCode();
+
+        logger.LogInformation("Exhibitor {ExhibitorId} synced to external catalog", exhibitorId);
     }
 
-    private static ExternalProfilePayload MapToExternalPayload(PublishedProfile published) => new()
+    private static ExternalExhibitorPayload MapToExternalPayload(
+        PublishedProfile profile,
+        PublishedBrands brands) => new()
     {
-        ExhibitorId = published.ExhibitorId,
-        CompanyName = published.CompanyName,
-        // ... mapping
+        ExhibitorId = profile.ExhibitorId,
+        CompanyName = profile.CompanyName,
+        Contact = new ExternalContact
+        {
+            FirstName = profile.Content.ShowroomContact.FirstName,
+            LastName = profile.Content.ShowroomContact.LastName,
+            Email = profile.Content.ShowroomContact.Email,
+            Phone = profile.Content.ShowroomContact.Phone
+        },
+        Website = profile.Content.CompanyContact.Website,
+        Brands = brands.Items.Select(b => new ExternalBrand
+        {
+            BrandId = b.BrandId,
+            Name = b.Name,
+            // ... brand mapping
+        }).ToList(),
+        PublishedAt = profile.PublishedOn
     };
 }
 ```
-
-The Function becomes a one-liner:
-
-```csharp
-[Function("PublishProfile")]
-public async Task Run(
-    [ServiceBusTrigger("profile-publish", Connection = "ServiceBusConnection")]
-    ServiceBusReceivedMessage message, FunctionContext context)
-{
-    var payload = message.Body.ToObjectFromJson<PublishProfileMessage>();
-    await _orchestrator.PublishAndSyncAsync(payload, context.CancellationToken);
-}
-```
-
-**For Phase 1, keep it simple** -- orchestration logic stays in the Function. Extract only if it grows.
 
 ---
 
 ## Message Contract
 
-Lives in the PublicApi project so both the WebApi (sender) and Functions (receiver) can reference it.
+The publish message is exhibitor-level (not profile-level or brand-level). It lives in the Integration project since it's not owned by any single module.
 
 ```csharp
-// Exhibitor.Profiles.PublicApi/Messages/PublishProfileMessage.cs
-namespace Exhibitor.Profiles.PublicApi.Messages;
+// Exhibitor.Integration/Messages/PublishExhibitorMessage.cs
 
-public record PublishProfileMessage
+public record PublishExhibitorMessage
 {
     public string ExhibitorId { get; init; } = string.Empty;
-    public string ProfileId { get; init; } = string.Empty;
     public string PublishedBy { get; init; } = string.Empty;
 }
 ```
 
 ---
 
-## IProfileModuleApi
+## Where Logic Lives
 
-The Functions project accesses the Profiles module **only** through this interface. The implementation (`ProfileModuleApi`) delegates to `IProfileService` internally.
+| Concern | Where | Why |
+|---|---|---|
+| Publish profile (draft -> published) | `ProfileService` in Profiles module | Module business rule |
+| Publish brands (draft -> published) | `BrandService` in Brands module | Module business rule |
+| Cross-module orchestration | `ExhibitorPublishOrchestrator` in Integration | Spans both modules -- neither module owns it |
+| Transform to target schema | `ExhibitorPublishOrchestrator` in Integration | External system concern |
+| Send to external system | `ExhibitorPublishOrchestrator` via `IHttpClientFactory` | HTTP config in `Program.cs` |
+| Retry / dead-letter | Service Bus queue settings | Infrastructure -- `MaxDeliveryCount` |
+| Message processing | `ExhibitorPublishWorker` in Integration | BackgroundService in WebApi process |
 
-```csharp
-// Exhibitor.Profiles.PublicApi/IProfileModuleApi.cs
-namespace Exhibitor.Profiles.PublicApi;
-
-public interface IProfileModuleApi
-{
-    Task<Result<PublishedProfile>> PublishAsync(
-        string exhibitorId, string profileId, string publishedBy,
-        CancellationToken ct = default);
-
-    Task<PublishedProfile?> GetPublishedAsync(
-        string exhibitorId, string profileId,
-        CancellationToken ct = default);
-}
-```
-
-```csharp
-// Exhibitor.Profiles.PublicApi/Contracts/PublishedProfile.cs
-namespace Exhibitor.Profiles.PublicApi.Contracts;
-
-public record PublishedProfile(
-    string ProfileId,
-    string ExhibitorId,
-    string CompanyName,
-    ProfileContentSnapshot Content,
-    DateTime PublishedOn,
-    string PublishedBy);
-
-public record ProfileContentSnapshot(
-    ShowroomContactInfo ShowroomContact,
-    CompanyContactInfo CompanyContact,
-    SocialMediaInfo SocialMedia,
-    ShowroomPreferencesInfo ShowroomPreferences,
-    int[] ChannelIds);
-
-public record ShowroomContactInfo(string FirstName, string LastName, string Email, string Phone);
-public record CompanyContactInfo(string PhoneNumber, string PrimaryEmail, string Website, string City, string State);
-public record SocialMediaInfo(string? LinkedInUrl, string? InstagramUrl, string? FacebookUrl);
-public record ShowroomPreferencesInfo(int[] ShowroomDetails, int[] HoursOfOperation);
-```
+**Key principle:** Modules own their own publish business logic. The Integration project orchestrates across modules and handles external system communication. Modules have no idea an external system exists.
 
 ---
 
-## Functions `Program.cs`
+## Discard Draft
 
-Registers the same module DI as the WebApi. The module code doesn't know which host is calling it.
+Discard is the inverse of publish -- it reverts draft content to the last published state. Unlike publish, discard is:
 
-```csharp
-// ExhibitorPlatform.Functions/Program.cs
-var host = new HostBuilder()
-    .ConfigureFunctionsWorkerDefaults()
-    .ConfigureServices((context, services) =>
-    {
-        var configuration = context.Configuration;
+- **Synchronous** -- no Service Bus, no external system call
+- **Single-module** -- you discard a profile draft or a brand draft, not both at once
 
-        // Shared Cosmos infrastructure
-        services.AddCosmosDbClient(configuration);
+So discard endpoints live inside their respective modules:
 
-        // Profiles module -- same registration as Host
-        services.AddProfilesModule();
-        services.AddProfilesInfrastructure(configuration);
-
-        // External system HTTP client
-        services.AddHttpClient("ExternalCatalogApi", client =>
-        {
-            client.BaseAddress = new Uri(configuration["ExternalSystems:CatalogApiUrl"]!);
-        });
-    })
-    .Build();
-
-host.Run();
 ```
+Modules/Profiles/Exhibitor.Profiles.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs
+Modules/Brands/Exhibitor.Brands.Features/Features/DiscardDraft/DiscardDraftEndpoint.cs
+```
+
+Each endpoint calls its own module's `IProfileService.DiscardDraftAsync()` or `IBrandService.DiscardDraftAsync()` directly.
 
 ---
 
 ## Where Everything Lives
 
 ```
+Integration/
+  Exhibitor.Integration/
+    Exhibitor.Integration.csproj               # Refs: Profiles.PublicApi, Brands.PublicApi,
+                                               #       FastEndpoints, Azure.Messaging.ServiceBus
+    Features/
+      PublishExhibitor/
+        PublishExhibitorEndpoint.cs             # POST /api/exhibitors/{id}/publish -> SB message
+    Workers/
+      ExhibitorPublishWorker.cs                # BackgroundService -- processes SB messages
+    Services/
+      IExhibitorPublishOrchestrator.cs
+      ExhibitorPublishOrchestrator.cs          # Calls both module PublicApis, transforms, sends
+    Messages/
+      PublishExhibitorMessage.cs               # Service Bus message payload
+    Models/
+      ExternalExhibitorPayload.cs              # Target schema for external system
+    DependencyInjection.cs                     # AddIntegrationWorkflows()
+
 Modules/Profiles/
   Exhibitor.Profiles.PublicApi/
-    IProfileModuleApi.cs                     # PublishAsync, GetPublishedAsync
+    IProfileModuleApi.cs                       # PublishAsync(), GetPublishedAsync()
     Contracts/
-      PublishedProfile.cs                    # Published snapshot DTOs
-    Messages/
-      PublishProfileMessage.cs               # Service Bus message contract
+      PublishedProfile.cs
 
   Exhibitor.Profiles.Features/
     Services/
-      IProfileService.cs                     # Internal service interface (CRUD + publish)
-      ProfileService.cs                      # Business logic implementation
+      IProfileService.cs                       # CRUD + PublishAsync + DiscardDraftAsync
+      ProfileService.cs
+      ProfileModuleApi.cs                      # Implements IProfileModuleApi
     Features/
-      PublishProfile/
-        PublishProfileEndpoint.cs            # FastEndpoints -- sends SB message, returns 202
+      CreateProfile/  GetProfile/  UpdateProfile/  DeleteProfile/  ListProfiles/
       DiscardDraft/
-        DiscardDraftEndpoint.cs              # FastEndpoints -- synchronous, no SB needed
-      CreateProfile/
-        CreateProfileEndpoint.cs
-        CreateProfileValidator.cs
-        CreateProfileMapping.cs
-      GetProfile/
-        GetProfileEndpoint.cs
-        GetProfileMapping.cs
-      UpdateProfile/
-        ...
-      DeleteProfile/
-        ...
-      ListProfiles/
-        ...
+        DiscardDraftEndpoint.cs                # Synchronous -- module-internal
 
-  Exhibitor.Profiles.Domain/
-    Entities/
-      Profile.cs                             # Inherits PublishableEntity<ProfileContent>
-      ProfileContent.cs
+Modules/Brands/                                # Phase 2
+  Exhibitor.Brands.PublicApi/
+    IBrandModuleApi.cs                         # PublishAsync(), GetPublishedAsync()
+    Contracts/
+      PublishedBrands.cs
 
-  Exhibitor.Profiles.Infrastructure/
-    Repositories/
-      ProfileRepository.cs
-    Interfaces/
-      IProfileRepository.cs
+  Exhibitor.Brands.Features/
+    Services/
+      IBrandService.cs
+      BrandService.cs
+      BrandModuleApi.cs
+    Features/
+      DiscardDraft/
+        DiscardDraftEndpoint.cs                # Synchronous -- module-internal
 
-ExhibitorPlatform.Functions/
-  Functions/
-    Profiles/
-      PublishProfileFunction.cs              # Orchestrates: publish -> transform -> send
-
-Modules/Common/
-  Exhibitor.Common.Application/
-    Models/
-      PublishableEntity.cs                   # Abstract base class
-    Interfaces/
-      IPublishableService.cs                 # Shared publish/discard interface
-  Exhibitor.Common.Cosmos/
-    Documents/
-      PublishableDocument.cs                 # Abstract base class
+ExhibitorPlatform.WebApi/
+  Program.cs                                   # Single host
 ```
+
+---
+
+## Project References
+
+```
+Exhibitor.Integration
+  +-- Exhibitor.Profiles.PublicApi             # IProfileModuleApi
+  +-- Exhibitor.Brands.PublicApi               # IBrandModuleApi
+  +-- FastEndpoints                            # for PublishExhibitorEndpoint
+  +-- Azure.Messaging.ServiceBus               # for worker + endpoint
+
+ExhibitorPlatform.WebApi
+  +-- Exhibitor.Integration                    # for DI registration + endpoint discovery
+  +-- Exhibitor.Profiles.Features              # for AddProfilesModule()
+  +-- Exhibitor.Profiles.Infrastructure        # for AddProfilesInfrastructure()
+  +-- Exhibitor.Brands.Features                # for AddBrandsModule() (Phase 2)
+  +-- Exhibitor.Brands.Infrastructure          # for AddBrandsInfrastructure() (Phase 2)
+  +-- Exhibitor.Common.*
+```
+
+The Integration project references ONLY PublicApi interfaces -- never internal module code. It communicates with modules the same way any external consumer would.
+
+---
+
+## DI Registration
+
+```csharp
+// Exhibitor.Integration/DependencyInjection.cs
+
+public static IServiceCollection AddIntegrationWorkflows(this IServiceCollection services)
+{
+    services.AddScoped<IExhibitorPublishOrchestrator, ExhibitorPublishOrchestrator>();
+    services.AddHostedService<ExhibitorPublishWorker>();
+
+    return services;
+}
+```
+
+```csharp
+// ExhibitorPlatform.WebApi/Program.cs
+
+// Modules
+builder.Services.AddProfilesModule();
+builder.Services.AddProfilesInfrastructure(builder.Configuration);
+// builder.Services.AddBrandsModule();            // Phase 2
+// builder.Services.AddBrandsInfrastructure();     // Phase 2
+
+// Integration workflows
+builder.Services.AddIntegrationWorkflows();
+
+// Service Bus
+builder.Services.AddSingleton(
+    new ServiceBusClient(builder.Configuration["ServiceBus:ConnectionString"]));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<ServiceBusClient>().CreateSender("exhibitor-publish"));
+
+// External system HTTP client
+builder.Services.AddHttpClient("ExternalCatalogApi", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ExternalSystems:CatalogApiUrl"]!);
+});
+```
+
+---
+
+## Phase 1 vs Phase 2
+
+In Phase 1 (Profiles only), the orchestrator calls only `IProfileModuleApi`. The `IBrandModuleApi` call is added in Phase 2 when the Brands module exists.
+
+```csharp
+// Phase 1 -- orchestrator calls profile only
+var profileResult = await profileApi.PublishAsync(exhibitorId, publishedBy, ct);
+// IBrandModuleApi not yet available -- skip or inject as optional
+
+// Phase 2 -- add brands call
+var brandsResult = await brandApi.PublishAsync(exhibitorId, publishedBy, ct);
+// Combine both results in the transform step
+```
+
+The Integration project can handle this with constructor injection -- if `IBrandModuleApi` isn't registered yet (Phase 1), inject it as `null` or use a no-op implementation.
 
 ---
 
@@ -444,4 +489,3 @@ Modules/Common/
 - [00-overview.md](00-overview.md) -- Architecture overview
 - [02-module-mapping.md](02-module-mapping.md) -- Full module structure
 - [03-integration-points.md](03-integration-points.md) -- PublicApi interface design
-- [Draft/Publish Pattern](https://github.com/innovationsandmore/experience.exhibitor.profile.service/blob/feature/UXP-3481/docs/draft-publish-pattern.md) -- Source domain pattern
